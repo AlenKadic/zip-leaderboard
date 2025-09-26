@@ -22,11 +22,10 @@
     .grid{display:grid;gap:16px;grid-template-columns:1fr 1fr}
     @media(max-width:900px){.grid{grid-template-columns:1fr}}
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    /* >>> added: keep input + button on one line */
+    /* keep input + button on one line */
     .row-nowrap{display:flex;gap:8px;align-items:flex-end;flex-wrap:nowrap}
     label.inline{display:inline-flex;flex-direction:row;align-items:center;gap:8px;margin:0}
     #puzzle{width:140px}
-    /* <<< */
     label{display:flex;flex-direction:column;font-size:14px;gap:6px}
     input{padding:8px 10px;border:1px solid #ddd;border-radius:8px}
     .hide{display:none}
@@ -60,13 +59,11 @@
   <div class="card">
     <h2>Public Leaderboards</h2>
     <small>Visible to everyone. Only <em>Name</em> + time are shown (with a LinkedIn link if you added one).</small>
-    <!-- >>> changed: use row-nowrap + label.inline so button sits inline with input -->
     <div class="row-nowrap" style="margin-top:10px">
       <label class="inline">Puzzle # <input id="puzzle" type="number" min="1" placeholder="e.g., 193"></label>
       <button class="btn" id="reload">Reload</button>
       <span class="toast" id="status"></span>
     </div>
-    <!-- <<< -->
   </div>
 
   <div class="grid">
@@ -75,8 +72,8 @@
       <table id="today"><thead><tr><th>#</th><th>Player</th><th>Time</th></tr></thead><tbody></tbody></table>
     </div>
     <div class="card">
-      <h3>All-time PBs</h3>
-      <table id="all"><thead><tr><th>#</th><th>Player</th><th>Best</th></tr></thead><tbody></tbody></table>
+      <h3>Average time</h3>
+      <table id="avg"><thead><tr><th>#</th><th>Player</th><th>Avg</th></tr></thead><tbody></tbody></table>
     </div>
   </div>
 
@@ -143,8 +140,7 @@ function renderRows(id, rows, cols){
   const tb = document.querySelector('#'+id+' tbody'); tb.innerHTML='';
   rows.forEach((r,i)=>{
     const tr = document.createElement('tr');
-    const cells = cols.map(k => r[k]);
-    if (id==='today' || id==='all'){
+    if (id==='today' || id==='avg'){  /* include avg table */
       tr.innerHTML = `<td>${i+1}</td><td class="namecell">${r.player || ''}${linkHtml(r.linkedin)}</td><td>${r.time || ''}</td>`;
     }else{
       tr.innerHTML = `<td>${i+1}</td>` + cols.map(k=>`<td>${r[k]}</td>`).join('');
@@ -163,7 +159,7 @@ async function loadBoards(){
     const j = await r.json();
     setLatestPuzzle(j.latestPuzzle);
     renderRows('today', j.today||[], ['player','time','linkedin']);
-    renderRows('all', j.alltime||[], ['player','time','linkedin']);
+    renderRows('avg',   j.averages||[], ['player','time','linkedin']);  /* use averages */
     status.textContent = '';
     if (j.latestPuzzle && !document.getElementById('pNum').value) document.getElementById('pNum').value = j.latestPuzzle;
   }catch(e){ status.textContent = 'Error: '+e.message; }
@@ -324,4 +320,5 @@ if (provider) initMe();
 </script>
 </body>
 </html>
+
 
