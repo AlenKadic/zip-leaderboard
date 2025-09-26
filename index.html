@@ -22,11 +22,8 @@
     .grid{display:grid;gap:16px;grid-template-columns:1fr 1fr}
     @media(max-width:900px){.grid{grid-template-columns:1fr}}
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    /* keep input + button on one line */
-    .row-nowrap{display:flex;gap:8px;align-items:flex-end;flex-wrap:nowrap}
-    label.inline{display:inline-flex;flex-direction:row;align-items:center;gap:8px;margin:0}
-    #puzzle{width:140px}
-    label{display:flex;flex-direction:column;font-size:14px;gap:6px}
+    .row-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    select{padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff}
     input{padding:8px 10px;border:1px solid #ddd;border-radius:8px}
     .hide{display:none}
     .right{margin-left:auto}
@@ -59,20 +56,21 @@
   <div class="card">
     <h2>Public Leaderboards</h2>
     <small>Visible to everyone. Only <em>Name</em> + time are shown (with a LinkedIn link if you added one).</small>
-    <div class="row-nowrap" style="margin-top:10px">
-      <label class="inline">Puzzle # <input id="puzzle" type="number" min="1" placeholder="e.g., 193"></label>
-      <button class="btn" id="reload">Reload</button>
-      <span class="toast" id="status"></span>
-    </div>
   </div>
 
   <div class="grid">
     <div class="card">
-      <h3>Today</h3>
+      <div class="row-between">
+        <h3 id="todayTitle">Today</h3>
+        <div class="row">
+          <select id="puzzleSel" title="Choose a day/puzzle"></select>
+          <button class="btn" id="refresh" title="Reload data">Reload</button>
+        </div>
+      </div>
       <table id="today"><thead><tr><th>#</th><th>Player</th><th>Time</th></tr></thead><tbody></tbody></table>
     </div>
     <div class="card">
-      <h3>Average time</h3>
+      <h3>Average time (per person)</h3>
       <table id="avg"><thead><tr><th>#</th><th>Player</th><th>Avg</th></tr></thead><tbody></tbody></table>
     </div>
   </div>
@@ -122,7 +120,7 @@
   </div>
 
 <script>
-const APPS = 'https://script.google.com/macros/s/AKfycbzHjGXIEgQuE6SNWwRKHFZdbgnwlH1lUgTulHSaSt8N7_-W0dfao489uzoiiZnbCB2z5A/exec';
+const APPS = 'https://script.google.com/macros/s/AKfycbx2hkrHB7nIynRQNgWNxNnQrbHJBl4zwo882FXtgmK9gl5s6QHFfytsTBteIbz6_Q_zNA/exec';
 
 let provider = localStorage.getItem('zip_provider') || null; // "google" | "email" | null
 let idToken = localStorage.getItem('zip_idtoken') || null;   // Google ID token
@@ -136,35 +134,62 @@ function showPrivate(on){
 }
 function setLatestPuzzle(n){ document.getElementById('lp').textContent = n ? '• latest puzzle #'+n : ''; }
 function linkHtml(url){ return url ? `<a href="${url}" target="_blank" rel="noopener" title="LinkedIn">↗</a>` : ''; }
-function renderRows(id, rows, cols){
+function renderRows(id, rows){
   const tb = document.querySelector('#'+id+' tbody'); tb.innerHTML='';
   rows.forEach((r,i)=>{
     const tr = document.createElement('tr');
-    if (id==='today' || id==='avg'){  /* include avg table */
-      tr.innerHTML = `<td>${i+1}</td><td class="namecell">${r.player || ''}${linkHtml(r.linkedin)}</td><td>${r.time || ''}</td>`;
-    }else{
-      tr.innerHTML = `<td>${i+1}</td>` + cols.map(k=>`<td>${r[k]}</td>`).join('');
-    }
+    tr.innerHTML = `<td>${i+1}</td><td class="namecell">${r.player || ''}${linkHtml(r.linkedin)}</td><td>${r.time || ''}</td>`;
     tb.appendChild(tr);
   });
 }
+function setTodayTitle(_puzzle, label){
+  document.getElementById('todayTitle').textContent = label || ('Today');
+}
+
+/* ---------- puzzles dropdown ---------- */
+function populatePuzzles(list, latest){
+  const sel = document.getElementById('puzzleSel');
+  sel.innerHTML = '';
+  (list||[]).sort((a,b)=> b.puzzle - a.puzzle).forEach(it=>{
+    const opt = document.createElement('option');
+    opt.value = it.puzzle;
+    opt.textContent = `${it.date} — #${it.puzzle}`;
+    if (String(it.puzzle) === String(latest)) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  const label = sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : ('Puzzle #'+(latest||''));
+  setTodayTitle(sel.value || latest, label);
+}
 
 /* ---------- Public boards ---------- */
-async function loadBoards(){
-  const status = document.getElementById('status');
-  status.textContent = 'Loading...';
+async function loadBoards(puzzle){
   try{
-    const p = document.getElementById('puzzle').value.trim();
-    const r = await fetch(APPS+'?action=leaderboard'+(p?('&puzzle='+encodeURIComponent(p)):'')); 
+    const q = puzzle ? ('&puzzle='+encodeURIComponent(puzzle)) : '';
+    const r = await fetch(APPS+'?action=leaderboard'+q);
     const j = await r.json();
+
     setLatestPuzzle(j.latestPuzzle);
-    renderRows('today', j.today||[], ['player','time','linkedin']);
-    renderRows('avg',   j.averages||[], ['player','time','linkedin']);  /* use averages */
-    status.textContent = '';
-    if (j.latestPuzzle && !document.getElementById('pNum').value) document.getElementById('pNum').value = j.latestPuzzle;
-  }catch(e){ status.textContent = 'Error: '+e.message; }
+    if (j.puzzles) populatePuzzles(j.puzzles, j.latestPuzzle);
+
+    renderRows('today', j.today||[]);
+    renderRows('avg',   j.averages||[]);
+
+    if (j.latestPuzzle && !document.getElementById('pNum').value) {
+      document.getElementById('pNum').value = j.latestPuzzle;
+    }
+  }catch(e){
+    console.error(e);
+  }
 }
-document.getElementById('reload').onclick = loadBoards;
+document.getElementById('puzzleSel').addEventListener('change', (e)=>{
+  const opt = e.target.selectedOptions[0];
+  setTodayTitle(e.target.value, opt ? opt.textContent : '');
+  loadBoards(e.target.value);
+});
+document.getElementById('refresh').onclick = ()=> {
+  const v = document.getElementById('puzzleSel').value;
+  loadBoards(v);
+};
 
 /* ---------- Auth ---------- */
 document.getElementById('useEmail').onclick = ()=> document.getElementById('emailBox').classList.remove('hide');
@@ -236,7 +261,12 @@ async function initMe(){
     document.getElementById('name').value = (j.profile && j.profile.name) || 'Player';
     document.getElementById('li').value = (j.profile && j.profile.linkedin) || '';
     const mine = (j.scores||[]).sort((a,b)=>a.seconds-b.seconds);
-    renderRows('mine', mine, ['puzzle','time']);
+    const tb = document.querySelector('#mine tbody'); tb.innerHTML='';
+    mine.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${r.puzzle}</td><td>${r.time}</td>`;
+      tb.appendChild(tr);
+    });
     return;
   }
   if (provider==='email' && sessionToken){
@@ -247,7 +277,12 @@ async function initMe(){
     document.getElementById('name').value = (j.profile && j.profile.name) || 'Player';
     document.getElementById('li').value = (j.profile && j.profile.linkedin) || '';
     const mine = (j.scores||[]).sort((a,b)=>a.seconds-b.seconds);
-    renderRows('mine', mine, ['puzzle','time']);
+    const tb = document.querySelector('#mine tbody'); tb.innerHTML='';
+    mine.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${r.puzzle}</td><td>${r.time}</td>`;
+      tb.appendChild(tr);
+    });
     return;
   }
   showPrivate(false);
@@ -270,7 +305,7 @@ document.getElementById('saveProfile').onclick = async ()=>{
     });
     const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
     msg.textContent = 'Saved ✔';
-    await loadBoards();
+    await loadBoards(document.getElementById('puzzleSel').value);
   }catch(e){ msg.textContent = 'Error: '+e.message; }
 };
 
@@ -291,7 +326,7 @@ document.getElementById('submitScore').onclick = async ()=>{
     });
     const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
     msg.textContent = 'Saved ✔';
-    await initMe(); await loadBoards();
+    await initMe(); await loadBoards(document.getElementById('puzzleSel').value);
   }catch(e){ msg.textContent = 'Error: '+e.message; }
 };
 
@@ -310,7 +345,7 @@ document.getElementById('deleteMe').onclick = async ()=>{
     msg.textContent = 'Deleted ✔';
     localStorage.removeItem('zip_idtoken'); localStorage.removeItem('zip_session'); localStorage.removeItem('zip_provider');
     provider = idToken = sessionToken = null;
-    showPrivate(false); loadBoards();
+    showPrivate(false); loadBoards(document.getElementById('puzzleSel').value);
   }catch(e){ msg.textContent = 'Error: '+e.message; }
 };
 
