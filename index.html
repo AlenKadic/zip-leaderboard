@@ -22,6 +22,11 @@
     .grid{display:grid;gap:16px;grid-template-columns:1fr 1fr}
     @media(max-width:900px){.grid{grid-template-columns:1fr}}
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    /* >>> added: keep input + button on one line */
+    .row-nowrap{display:flex;gap:8px;align-items:flex-end;flex-wrap:nowrap}
+    label.inline{display:inline-flex;flex-direction:row;align-items:center;gap:8px;margin:0}
+    #puzzle{width:140px}
+    /* <<< */
     label{display:flex;flex-direction:column;font-size:14px;gap:6px}
     input{padding:8px 10px;border:1px solid #ddd;border-radius:8px}
     .hide{display:none}
@@ -55,13 +60,13 @@
   <div class="card">
     <h2>Public Leaderboards</h2>
     <small>Visible to everyone. Only <em>Name</em> + time are shown (with a LinkedIn link if you added one).</small>
-    <div class="row" style="margin-top:10px">
-      <label>Puzzle #
-        <input id="puzzle" type="number" min="1" placeholder="e.g., 193">
-      </label>
+    <!-- >>> changed: use row-nowrap + label.inline so button sits inline with input -->
+    <div class="row-nowrap" style="margin-top:10px">
+      <label class="inline">Puzzle # <input id="puzzle" type="number" min="1" placeholder="e.g., 193"></label>
       <button class="btn" id="reload">Reload</button>
       <span class="toast" id="status"></span>
     </div>
+    <!-- <<< -->
   </div>
 
   <div class="grid">
@@ -139,7 +144,6 @@ function renderRows(id, rows, cols){
   rows.forEach((r,i)=>{
     const tr = document.createElement('tr');
     const cells = cols.map(k => r[k]);
-    // Special: name + optional LinkedIn
     if (id==='today' || id==='all'){
       tr.innerHTML = `<td>${i+1}</td><td class="namecell">${r.player || ''}${linkHtml(r.linkedin)}</td><td>${r.time || ''}</td>`;
     }else{
@@ -155,7 +159,7 @@ async function loadBoards(){
   status.textContent = 'Loading...';
   try{
     const p = document.getElementById('puzzle').value.trim();
-    const r = await fetch(APPS+'?action=leaderboard'+(p?('&puzzle='+encodeURIComponent(p)):''));
+    const r = await fetch(APPS+'?action=leaderboard'+(p?('&puzzle='+encodeURIComponent(p)):'')); 
     const j = await r.json();
     setLatestPuzzle(j.latestPuzzle);
     renderRows('today', j.today||[], ['player','time','linkedin']);
@@ -189,7 +193,7 @@ window.onGoogle = (resp) => {
   provider = 'google';
   localStorage.setItem('zip_idtoken', idToken);
   localStorage.setItem('zip_provider', provider);
-  initMe(); // loads private area
+  initMe();
 };
 
 /* Email OTP */
@@ -228,7 +232,6 @@ document.getElementById('verifyCode').onclick = async ()=>{
 
 /* ---------- Private area ---------- */
 async function initMe(){
-  // For /me, send token via query (Apps Script reads query on GET)
   if (provider==='google' && idToken){
     const r = await fetch(APPS+'?action=me&idToken='+encodeURIComponent(idToken));
     const j = await r.json();
@@ -321,3 +324,4 @@ if (provider) initMe();
 </script>
 </body>
 </html>
+
