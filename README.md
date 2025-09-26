@@ -1,2 +1,2 @@
 # zip-leaderboard
-Zip LeaderboardS
+Zip Leaderboard
