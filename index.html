@@ -432,7 +432,7 @@ document.getElementById('submitScore').onclick = async ()=>{
     time: document.getElementById('pTime').value.trim()
   };
   if (provider==='google' && idToken) body.idToken = idToken;
-  if (provider==='email' and sessionToken) body.sessionToken = sessionToken;
+  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;  <!-- FIXED -->
   try{
     const r = await fetch(APPS+'?action=submitScore', {
       method:'POST',
@@ -531,8 +531,8 @@ async function initMe(){
     const j = await r.json();
     if (j.error){ showPrivate(false); setSignedInUI(false); return; }
     showPrivate(true); setSignedInUI(true);
-    document.getElementById('name').value = (j.profile and j.profile.name) || 'Player';
-    document.getElementById('li').value = (j.profile and j.profile.linkedin) || '';
+    document.getElementById('name').value = (j.profile && j.profile.name) || 'Player';   <!-- FIXED -->
+    document.getElementById('li').value = (j.profile && j.profile.linkedin) || '';       <!-- FIXED -->
     const mine = (j.scores||[]).sort((a,b)=>a.seconds-b.seconds);
     const tb = document.querySelector('#mine tbody'); tb.innerHTML='';
     mine.forEach((r,i)=>{
@@ -587,5 +587,4 @@ if (provider) initMe();
 </footer>
 </body>
 </html>
-
 
