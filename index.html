@@ -1,11 +1,11 @@
-<!doctype html> 
+<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Zip Community Leaderboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- CSP: allow inline scripts so our page JS can run -->
+  <!-- CSP -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src 'self' 'unsafe-inline' https://accounts.google.com;
@@ -14,7 +14,6 @@
                  style-src 'self' 'unsafe-inline';
                  frame-src https://accounts.google.com;">
 
-  <!-- Google Sign-In -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
@@ -45,32 +44,36 @@
     .consent{display:flex;align-items:center;gap:10px;margin-right:16px}
     .consent a{text-decoration:underline}
 
-    /* Keep widths stable & clip overflow */
-    table { table-layout: fixed; }
-    :is(#today,#avg,#mine) th, :is(#today,#avg,#mine) td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    :is(#today,#avg,#mine) th:nth-child(1), :is(#today,#avg,#mine) td:nth-child(1) { width: 60px; }  /* # */
-    :is(#today,#avg,#mine) th:nth-child(3), :is(#today,#avg,#mine) td:nth-child(3) { width: 80px; }  /* Time / Avg Time */
+    /* stable widths / ellipsis */
+    table{table-layout:fixed}
+    :is(#today,#avg,#mine) th, :is(#today,#avg,#mine) td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    :is(#today,#avg,#mine) th:nth-child(1), :is(#today,#avg,#mine) td:nth-child(1){width:60px}
+    :is(#today,#avg,#mine) th:nth-child(3), :is(#today,#avg,#mine) td:nth-child(3){width:80px}
 
-    /* one-line name with ellipsis, keep ↗ visible */
-    .namecell{display:flex;align-items:center;gap:6px;min-width:0;}
-    .namecell .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .namecell a{flex:0 0 auto;}
+    .namecell{display:flex;align-items:center;gap:6px;min-width:0}
+    .namecell .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .namecell a{flex:0 0 auto}
 
-    /* Prevent header overflow on mobile */
-    html, body { overflow-x: hidden; }
-    header > .row { flex: 1 1 640px; min-width: 0;}
-    @media (max-width: 600px) {
-      .brand { font-size: 26px; }
-      .consent { width: 100%; margin-right: 0; }
-      #authRow { width: 100%; gap: 8px; }
-      .g_id_signin { transform: scale(0.88); transform-origin: left top; }
-      #authRow .btn { flex: 0 0 auto; }
+    /* no horizontal scroll */
+    html,body{overflow-x:hidden}
+    header>.row{flex:1 1 640px;min-width:0}
+    @media (max-width:600px){
+      .brand{font-size:26px}
+      .consent{width:100%;margin-right:0}
+      #authRow{width:100%;gap:8px}
+      .g_id_signin{transform:scale(.88);transform-origin:left top}
+      #authRow .btn{flex:0 0 auto}
     }
 
-    /* === Section tints === */
-    .card--pl { background:#F5F0FF; border-color:#E6DDFF; } /* Public Leaderboards + its tables */
-    .card--me { background:#EDF9F4; border-color:#D1F0E2; } /* My private profile */
-    .card--me, .card--me ~ .card { background:#EDF9F4; border-color:#D1F0E2; }
+    /* section tints */
+    .card--pl{background:#F5F0FF;border-color:#E6DDFF}
+    .card--me{background:#EDF9F4;border-color:#D1F0E2}
+    .card--me, .card--me ~ .card{background:#EDF9F4;border-color:#D1F0E2}
+
+    /* hard-hide auth bits when signed in */
+    body.signedin .consent,
+    body.signedin .g_id_signin,
+    body.signedin #useEmail{display:none !important;}
   </style>
 </head>
 <body>
@@ -185,7 +188,7 @@ let provider = localStorage.getItem('zip_provider') || null;
 let idToken = localStorage.getItem('zip_idtoken') || null;
 let sessionToken = localStorage.getItem('zip_session') || null;
 
-/* ---------- consent gate ---------- */
+/* consent gate */
 function isAccepted(){ return localStorage.getItem('zip_accept') === '1'; }
 function setGate(on){
   document.getElementById('authRow').classList.toggle('hide', !on);
@@ -199,26 +202,20 @@ function setGate(on){
     const ok = !!e.target.checked;
     localStorage.setItem('zip_accept', ok ? '1' : '0');
     setGate(ok);
-    if (provider) setSignedInUI(true); // keep login area hidden when already signed in
+    if (provider) setSignedInUI(true);
   });
 })();
 
-/* ---------- UI helpers ---------- */
+/* UI helpers */
 function showPrivate(on){
   document.getElementById('private').classList.toggle('hide', !on);
   document.getElementById('pleaseSignIn').classList.toggle('hide', on);
   document.getElementById('signOut').classList.toggle('hide', !on);
 }
 function setSignedInUI(loggedIn){
-  const consent = document.querySelector('.consent');
-  const gBtn = document.querySelector('.g_id_signin');
-  const emailBtn = document.getElementById('useEmail');
+  document.body.classList.toggle('signedin', loggedIn);
   const authRow = document.getElementById('authRow');
-  if (consent) consent.classList.toggle('hide', loggedIn);
-  if (gBtn) gBtn.classList.toggle('hide', loggedIn);
-  if (emailBtn) emailBtn.classList.toggle('hide', loggedIn);
-  if (authRow) authRow.classList.toggle('hide', !loggedIn && !isAccepted());
-  document.getElementById('signOut').classList.toggle('hide', !loggedIn);
+  if (authRow) authRow.classList.toggle('hide', !isAccepted() && !loggedIn);
 }
 function linkHtml(url){ return url ? `<a href="${url}" target="_blank" rel="noopener" title="LinkedIn">↗</a>` : ''; }
 function renderRows(id, rows){
@@ -233,7 +230,7 @@ function setTodayTitle(_puzzle, label){
   document.getElementById('todayTitle').textContent = label || 'Puzzle #';
 }
 
-/* ---------- puzzles dropdown ---------- */
+/* puzzles dropdown */
 function populatePuzzles(list, latest){
   const sel = document.getElementById('puzzleSel');
   sel.innerHTML = '';
@@ -248,17 +245,15 @@ function populatePuzzles(list, latest){
   setTodayTitle(sel.value || latest, label);
 }
 
-/* ---------- Public boards ---------- */
+/* Public boards */
 async function loadBoards(puzzle){
   try{
     const q = puzzle ? ('&puzzle='+encodeURIComponent(puzzle)) : '';
     const r = await fetch(APPS+'?action=leaderboard'+q);
     const j = await r.json();
-
     if (j.puzzles) populatePuzzles(j.puzzles, puzzle || j.latestPuzzle);
     renderRows('today', j.today||[]);
     renderRows('avg',   j.averages||[]);
-
     if (j.latestPuzzle && !document.getElementById('pNum').value) {
       document.getElementById('pNum').value = j.latestPuzzle;
     }
@@ -274,7 +269,7 @@ document.getElementById('refresh').onclick = ()=>{
   loadBoards(v);
 };
 
-/* ---------- Auth ---------- */
+/* Auth */
 document.getElementById('useEmail').onclick = ()=>{
   if (!isAccepted()){ alert('Please accept the Terms and Privacy Policy first.'); return; }
   document.getElementById('emailBox').classList.remove('hide');
@@ -284,7 +279,7 @@ document.getElementById('signOut').onclick = async ()=>{
   try{
     if (provider==='email' && sessionToken){
       await fetch(APPS+'?action=logout', {
-        method:'POST', headers:{'Content-Type':'application/json'},
+        method:'POST',
         body: JSON.stringify({action:'logout', sessionToken})
       });
     }
@@ -311,7 +306,10 @@ document.getElementById('sendCode').onclick = async ()=>{
   const email = document.getElementById('eml').value.trim();
   const msg = document.getElementById('otpMsg'); msg.textContent = 'Sending...';
   try{
-    const r = await fetch(APPS+'?action=requestOtp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'requestOtp', email}) });
+    const r = await fetch(APPS+'?action=requestOtp', {
+      method:'POST',
+      body: JSON.stringify({action:'requestOtp', email})
+    });
     const j = await r.json();
     if (!j.ok) throw new Error(j.error||'Failed');
     msg.textContent = 'Code sent. Check your inbox (valid 10 min).';
@@ -324,7 +322,10 @@ document.getElementById('verifyCode').onclick = async ()=>{
   const code = document.getElementById('otp').value.trim();
   const msg = document.getElementById('otpMsg'); msg.textContent = 'Verifying...';
   try{
-    const r = await fetch(APPS+'?action=verifyOtp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'verifyOtp', email, code}) });
+    const r = await fetch(APPS+'?action=verifyOtp', {
+      method:'POST',
+      body: JSON.stringify({action:'verifyOtp', email, code})
+    });
     const j = await r.json();
     if (!j.ok) throw new Error(j.error||'Failed');
     sessionToken = j.sessionToken; provider='email';
@@ -335,8 +336,7 @@ document.getElementById('verifyCode').onclick = async ()=>{
   }catch(e){ msg.textContent = 'Error: '+e.message; }
 };
 
-/* ---------- Private actions ---------- */
-// Save profile
+/* Private actions */
 document.getElementById('saveProfile').onclick = async ()=>{
   const msg = document.getElementById('nameMsg'); msg.textContent = 'Saving...';
   const body = {
@@ -346,10 +346,9 @@ document.getElementById('saveProfile').onclick = async ()=>{
   };
   if (provider==='google' && idToken) body.idToken = idToken;
   if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
-
   try{
     const r = await fetch(APPS+'?action=upsertProfile', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST',
       body: JSON.stringify(body)
     });
     const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
@@ -358,7 +357,6 @@ document.getElementById('saveProfile').onclick = async ()=>{
   }catch(e){ msg.textContent = 'Error: '+e.message; }
 };
 
-// Submit score
 document.getElementById('submitScore').onclick = async ()=>{
   const msg = document.getElementById('msg'); msg.textContent = 'Saving...';
   const body = {
@@ -368,10 +366,9 @@ document.getElementById('submitScore').onclick = async ()=>{
   };
   if (provider==='google' && idToken) body.idToken = idToken;
   if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
-
   try{
     const r = await fetch(APPS+'?action=submitScore', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST',
       body: JSON.stringify(body)
     });
     const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
@@ -381,17 +378,15 @@ document.getElementById('submitScore').onclick = async ()=>{
   }catch(e){ msg.textContent = 'Error: '+e.message; }
 };
 
-// Delete all data
 document.getElementById('deleteMe').onclick = async ()=>{
   if (!confirm('Delete your profile and all scores? This cannot be undone.')) return;
   const msg = document.getElementById('msg'); msg.textContent = 'Deleting...';
   const body = { action:'deleteMe' };
   if (provider==='google' && idToken) body.idToken = idToken;
   if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
-
   try{
     const r = await fetch(APPS+'?action=deleteMe', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST',
       body: JSON.stringify(body)
     });
     const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
@@ -405,7 +400,7 @@ document.getElementById('deleteMe').onclick = async ()=>{
   }catch(e){ msg.textContent = 'Error: '+e.message; }
 };
 
-/* ---------- Private area ---------- */
+/* Private area */
 async function initMe(){
   if (provider==='google' && idToken){
     const r = await fetch(APPS+'?action=me&idToken='+encodeURIComponent(idToken));
@@ -442,7 +437,7 @@ async function initMe(){
   showPrivate(false); setSignedInUI(false);
 }
 
-/* ---------- boot ---------- */
+/* boot */
 loadBoards();
 if (provider) initMe();
 </script>
@@ -454,5 +449,3 @@ if (provider) initMe();
 </footer>
 </body>
 </html>
-
-
