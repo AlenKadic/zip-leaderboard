@@ -30,7 +30,6 @@
     h2,h3{margin:8px 0 12px}
     small{color:var(--muted)}
     .grid{display:grid;gap:16px;grid-template-columns:1fr}
-    /* (optional) you can delete the media query entirely */
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .row-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
     select{padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff}
@@ -46,29 +45,26 @@
     .consent{display:flex;align-items:center;gap:10px;margin-right:16px}
     .consent a{text-decoration:underline}
 
-    /* Make # and Time columns 60px in all tables */
+    /* Keep widths stable & clip overflow */
     table { table-layout: fixed; }
-      :is(#today,#avg,#mine) th, :is(#today,#avg,#mine) td {
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-      :is(#today,#avg,#mine) th:nth-child(1),
-      :is(#today,#avg,#mine) td:nth-child(1) { width: 60px; }   /* # */
-      :is(#today,#avg,#mine) th:nth-child(3),
-      :is(#today,#avg,#mine) td:nth-child(3) { width: 100px; }   /* Time / Avg Time */
+    :is(#today,#avg,#mine) th, :is(#today,#avg,#mine) td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    :is(#today,#avg,#mine) th:nth-child(1), :is(#today,#avg,#mine) td:nth-child(1) { width: 60px; }  /* # */
+    :is(#today,#avg,#mine) th:nth-child(3), :is(#today,#avg,#mine) td:nth-child(3) { width: 80px; }  /* Time / Avg Time */
 
-    /* --- NEW: prevent header overflow on mobile --- */
-    html, body { overflow-x: hidden; }              /* stop any horizontal scroll */
-    header > .row { flex: 1 1 640px; min-width: 0;} /* let the right block shrink instead of pushing */
+    /* NEW: one-line name with ellipsis, keep ↗ visible */
+    .namecell{display:flex;align-items:center;gap:6px;min-width:0;}
+    .namecell .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .namecell a{flex:0 0 auto;}
 
+    /* Prevent header overflow on mobile */
+    html, body { overflow-x: hidden; }
+    header > .row { flex: 1 1 640px; min-width: 0;}
     @media (max-width: 600px) {
       .brand { font-size: 26px; }
-      .consent { width: 100%; margin-right: 0; }    /* consent on its own row */
-      #authRow { width: 100%; gap: 8px; }           /* buttons on the next row */
-      .g_id_signin {
-        transform: scale(0.88);                     /* gently shrink Google button */
-        transform-origin: left top;
-      }
-      #authRow .btn { flex: 0 0 auto; }             /* keep email button compact */
+      .consent { width: 100%; margin-right: 0; }
+      #authRow { width: 100%; gap: 8px; }
+      .g_id_signin { transform: scale(0.88); transform-origin: left top; }
+      #authRow .btn { flex: 0 0 auto; }
     }
   </style>
 </head>
@@ -76,7 +72,6 @@
   <header>
     <div class="brand">
       Zip Community Leaderboard
-      <!-- subtitle: now NOT bold -->
       <div class="muted" style="font-size:14px;margin-top:2px;font-weight:normal;">
         <p style="margin:0">Unofficial, fan-created community leaderboard for the Zip puzzle.</p>
         <p style="margin:0">Not affiliated with or endorsed by LinkedIn.</p>
@@ -84,13 +79,11 @@
     </div>
 
     <div class="row">
-      <!-- Consent gate -->
       <label class="consent" title="Required to use the service">
         <input type="checkbox" id="accept">
         <span>To log in, I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms</a> and acknowledge the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
       </label>
 
-      <!-- Auth (hidden until acceptance) -->
       <div id="authRow" class="row hide">
         <div id="g_id_onload"
           data-client_id="368132008439-lskm63n5dmsv9r43cchmrjpdmhfqaa1p.apps.googleusercontent.com"
@@ -132,7 +125,6 @@
     <h2>My private profile</h2>
     <small>Only you can see and edit this after signing in.</small>
 
-    <!-- Email OTP box -->
     <div id="emailBox" class="hide" style="margin:12px 0 4px">
       <div class="row">
         <label>Email <input id="eml" placeholder="you@example.com"></label>
@@ -145,7 +137,6 @@
       <div style="height:1px;background:#eee;margin:12px 0"></div>
     </div>
 
-    <!-- Private area -->
     <div id="private" class="hide">
       <div class="row" style="margin-top:10px">
         <label>Name
@@ -170,7 +161,6 @@
       <table id="mine"><thead><tr><th>#</th><th>Puzzle</th><th>Time</th></tr></thead><tbody></tbody></table>
     </div>
 
-    <!-- Shown when signed out -->
     <div id="pleaseSignIn">
       <small>Sign in above to manage your private profile and submit scores.</small>
       <div class="muted" style="margin-top:6px">
@@ -218,7 +208,7 @@ function renderRows(id, rows){
   const tb = document.querySelector('#'+id+' tbody'); tb.innerHTML='';
   rows.forEach((r,i)=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${i+1}</td><td class="namecell">${r.player || ''}${linkHtml(r.linkedin)}</td><td>${r.time || ''}</td>`;
+    tr.innerHTML = `<td>${i+1}</td><td class="namecell"><span class="nm">${r.player || ''}</span>${linkHtml(r.linkedin)}</td><td>${r.time || ''}</td>`;
     tb.appendChild(tr);
   });
 }
@@ -376,4 +366,5 @@ if (provider) initMe();
 </footer>
 </body>
 </html>
+
 
