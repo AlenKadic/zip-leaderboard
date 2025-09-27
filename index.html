@@ -59,7 +59,7 @@
       </label>
 
       <!-- Auth (hidden until acceptance) -->
-      <div id="authRow" class="row hide">
+      <div id="authRow" class="row">
         <div id="g_id_onload"
           data-client_id="368132008439-lskm63n5dmsv9r43cchmrjpdmhfqaa1p.apps.googleusercontent.com"
           data-callback="onGoogle"
@@ -150,16 +150,11 @@ let sessionToken = localStorage.getItem('zip_session') || null;
 
 /* ---------- consent gate ---------- */
 function isAccepted(){ return localStorage.getItem('zip_accept') === '1'; }
-function setGate(on){ document.getElementById('authRow').classList.toggle('hide', !on); }
 (function initConsent(){
   const box = document.getElementById('accept');
-  const accepted = isAccepted();
-  box.checked = accepted;
-  setGate(accepted);
+  box.checked = isAccepted();
   box.addEventListener('change', (e)=>{
-    const ok = !!e.target.checked;
-    localStorage.setItem('zip_accept', ok ? '1' : '0');
-    setGate(ok);
+    localStorage.setItem('zip_accept', e.target.checked ? '1' : '0');
   });
 })();
 
@@ -204,7 +199,7 @@ async function loadBoards(puzzle){
     const r = await fetch(APPS+'?action=leaderboard'+q);
     const j = await r.json();
 
-    if (j.puzzles) populatePuzzles(j.puzzles, j.latestPuzzle);
+    if (j.puzzles) populatePuzzles(j.puzzles, puzzle || j.latestPuzzle);
     renderRows('today', j.today||[]);
     renderRows('avg',   j.averages||[]);
 
