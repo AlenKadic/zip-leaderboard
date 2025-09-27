@@ -9,7 +9,7 @@
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src 'self' 'unsafe-inline' https://accounts.google.com;
-                 connect-src 'self' https://script.google.com https://oauth2.googleapis.com https://accounts.google.com;
+                 connect-src 'self' https://script.google.com https://script.googleusercontent.com https://oauth2.googleapis.com https://accounts.google.com;
                  img-src 'self' https: data:;
                  style-src 'self' 'unsafe-inline';
                  frame-src https://accounts.google.com;">
@@ -150,11 +150,18 @@ let sessionToken = localStorage.getItem('zip_session') || null;
 
 /* ---------- consent gate ---------- */
 function isAccepted(){ return localStorage.getItem('zip_accept') === '1'; }
+function setGate(on){
+  document.getElementById('authRow').classList.toggle('hide', !on);
+}
 (function initConsent(){
   const box = document.getElementById('accept');
-  box.checked = isAccepted();
+  const accepted = isAccepted();
+  box.checked = accepted;
+  setGate(accepted);
   box.addEventListener('change', (e)=>{
-    localStorage.setItem('zip_accept', e.target.checked ? '1' : '0');
+    const ok = !!e.target.checked;
+    localStorage.setItem('zip_accept', ok ? '1' : '0');
+    setGate(ok);
   });
 })();
 
