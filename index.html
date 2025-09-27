@@ -72,7 +72,10 @@
     .card--pl{background:#F5F0FF;border-color:#E6DDFF}
     .card--me{background:#EDF9F4;border-color:#D1F0E2}
     .card--me, .card--me ~ .card{background:#EDF9F4;border-color:#D1F0E2}
-
+  
+    /* Make the gap between the two green windows match the grid gap */
+    .card--me + .card--me { margin-top:16px; }
+   
     /* hard-hide auth bits when signed in */
     body.signedin .consent,
     body.signedin .g_id_signin,
@@ -560,9 +563,13 @@ if (provider) initMe();
 </script>
 
 <footer class="footer">
-  <p class="muted" style="margin-top:8px">
-    “Zip” and “LinkedIn” are trademarks of LinkedIn Corporation. This is an independent community project and is not affiliated with, endorsed by, or sponsored by LinkedIn.
-  </p>
+  <p class="muted" style="margin-top:6px">
+    Questions, suggestions, or concerns? Email me at
+  <a href="mailto:alenkadicpetrinja@gmail.com">alenkadicpetrinja@gmail.com</a>
+    or message me on LinkedIn
+  <a href="https://www.linkedin.com/in/alen-kadic/" target="_blank" rel="noopener">alen-kadic</a>.
+    This is a personal, fan-made project provided “as is” and is not affiliated with, endorsed by, or sponsored by LinkedIn; please do not contact LinkedIn about it.
+  </p>  
 </footer>
 </body>
 </html>
