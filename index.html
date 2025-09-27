@@ -50,8 +50,8 @@
     :is(#today,#avg,#mine) th:nth-child(1), :is(#today,#avg,#mine) td:nth-child(1){width:60px}
     :is(#today,#avg,#mine) th:nth-child(3), :is(#today,#avg,#mine) td:nth-child(3){width:80px}
 
-    /* override for My best scores: make 3rd column 150px */
-    #mine th:nth-child(3), #mine td:nth-child(3){width:150px}
+    /* My best scores: Date column (now 2nd) width 150px */
+    #mine th:nth-child(2), #mine td:nth-child(2){width:150px}
 
     /* My best scores: horizontal scroll on narrow screens */
     .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; width:100%}
@@ -195,7 +195,7 @@
     <div class="table-scroll">
       <table id="mine">
         <thead>
-          <tr><th>#</th><th>Puzzle</th><th>Date</th><th>Time</th><th></th></tr>
+          <tr><th>#</th><th>Date</th><th>Time</th><th></th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -432,7 +432,7 @@ document.getElementById('submitScore').onclick = async ()=>{
     time: document.getElementById('pTime').value.trim()
   };
   if (provider==='google' && idToken) body.idToken = idToken;
-  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
+  if (provider==='email' and sessionToken) body.sessionToken = sessionToken;
   try{
     const r = await fetch(APPS+'?action=submitScore', {
       method:'POST',
@@ -500,7 +500,7 @@ async function initMe(){
       const timeTxt = (typeof r.seconds === 'number') ? fmtMMSS(r.seconds) : onlyMMSS(r.time || '');
       const tr = document.createElement('tr');
       tr.innerHTML =
-        `<td>${i+1}</td><td>${r.puzzle}</td><td>${dateLabel}</td><td>${timeTxt}</td>
+        `<td>${i+1}</td><td>${dateLabel}</td><td>${timeTxt}</td>
          <td><button class="btn delScore"
            data-id="${id||''}"
            data-puzzle="${r.puzzle}"
@@ -531,8 +531,8 @@ async function initMe(){
     const j = await r.json();
     if (j.error){ showPrivate(false); setSignedInUI(false); return; }
     showPrivate(true); setSignedInUI(true);
-    document.getElementById('name').value = (j.profile && j.profile.name) || 'Player';
-    document.getElementById('li').value = (j.profile && j.profile.linkedin) || '';
+    document.getElementById('name').value = (j.profile and j.profile.name) || 'Player';
+    document.getElementById('li').value = (j.profile and j.profile.linkedin) || '';
     const mine = (j.scores||[]).sort((a,b)=>a.seconds-b.seconds);
     const tb = document.querySelector('#mine tbody'); tb.innerHTML='';
     mine.forEach((r,i)=>{
@@ -541,7 +541,7 @@ async function initMe(){
       const timeTxt = (typeof r.seconds === 'number') ? fmtMMSS(r.seconds) : onlyMMSS(r.time || '');
       const tr = document.createElement('tr');
       tr.innerHTML =
-        `<td>${i+1}</td><td>${r.puzzle}</td><td>${dateLabel}</td><td>${timeTxt}</td>
+        `<td>${i+1}</td><td>${dateLabel}</td><td>${timeTxt}</td>
          <td><button class="btn delScore"
            data-id="${id||''}"
            data-puzzle="${r.puzzle}"
@@ -587,3 +587,5 @@ if (provider) initMe();
 </footer>
 </body>
 </html>
+
+
