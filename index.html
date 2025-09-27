@@ -66,6 +66,10 @@
       .g_id_signin { transform: scale(0.88); transform-origin: left top; }
       #authRow .btn { flex: 0 0 auto; }
     }
+
+    /* === Section tints === */
+    .card--pl { background:#F5F0FF; border-color:#E6DDFF; } /* Public Leaderboards */
+    .card--me { background:#EDF9F4; border-color:#D1F0E2; } /* My private profile */
   </style>
 </head>
 <body>
@@ -99,7 +103,7 @@
     </div>
   </header>
 
-  <div class="card">
+  <div class="card card--pl">
     <h2>Public Leaderboards</h2>
     <small>Visible to everyone. Only <em>Name</em> + time are shown (with a LinkedIn link if you added one).</small>
   </div>
@@ -121,7 +125,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card card--me">
     <h2>My private profile</h2>
     <small>Only you can see and edit this after signing in.</small>
 
@@ -366,5 +370,3 @@ if (provider) initMe();
 </footer>
 </body>
 </html>
-
-
