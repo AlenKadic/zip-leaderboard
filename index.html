@@ -51,9 +51,10 @@
   <header>
     <div class="brand">
       Zip Community Leaderboard
-      <!-- small subhead under the title -->
-      <div class="muted" style="font-size:14px;margin-top:2px">
-        Unofficial, fan-created community leaderboard for the Zip puzzle. Not affiliated with or endorsed by LinkedIn.
+      <!-- subtitle: now NOT bold -->
+      <div class="muted" style="font-size:14px;margin-top:2px;font-weight:normal;">
+        <p style="margin:0">Unofficial, fan-created community leaderboard for the Zip puzzle.</p>
+        <p style="margin:0">Not affiliated with or endorsed by LinkedIn.</p>
       </div>
     </div>
 
@@ -144,7 +145,17 @@
       <table id="mine"><thead><tr><th>#</th><th>Puzzle</th><th>Time</th></tr></thead><tbody></tbody></table>
     </div>
 
-    <div id="pleaseSignIn"><small>Sign in above to manage your private profile and submit scores.</small></div>
+    <!-- Shown when signed out -->
+    <div id="pleaseSignIn">
+      <small>Sign in above to manage your private profile and submit scores.</small>
+      <div class="muted" style="margin-top:6px">
+        <small>
+          By signing in you agree to our
+          <a href="terms.html" target="_blank" rel="noopener">Terms</a> and
+          <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+        </small>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -334,11 +345,6 @@ if (provider) initMe();
 </script>
 
 <footer class="footer">
-  <small>
-    By signing in you agree to our
-    <a href="terms.html" target="_blank" rel="noopener">Terms</a> and
-    <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
-  </small>
   <p class="muted" style="margin-top:8px">
     “Zip” and “LinkedIn” are trademarks of LinkedIn Corporation. This is an independent community project and is not affiliated with, endorsed by, or sponsored by LinkedIn.
   </p>
