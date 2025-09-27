@@ -5,7 +5,7 @@
   <title>Zip Community Leaderboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- CSP -->
+  <!-- CSP (add your Apps Script domain if different) -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src 'self' 'unsafe-inline' https://accounts.google.com;
@@ -17,435 +17,470 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
-    :root{--card:#fff;--line:#eee;--muted:#666}
-    body{font:16px system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:24px;background:#fafafa}
-    header{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:16px}
-    .brand{font-size:32px;font-weight:800;line-height:1.15;}
-    .btn{padding:8px 14px;border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer}
-    .btn:hover{box-shadow:0 2px 8px rgba(0,0,0,.06)}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 10px rgba(0,0,0,.04)}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
-    h2,h3{margin:8px 0 12px}
-    small{color:var(--muted)}
-    .grid{display:grid;gap:16px;grid-template-columns:1fr}
-    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .row-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
-    select{padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff}
-    input{padding:8px 10px;border:1px solid #ddd;border-radius:8px}
-    .hide{display:none}
-    .right{margin-left:auto}
-    .toast{font-size:14px}
-    .namecell a{font-size:12px;margin-left:6px;text-decoration:none}
-    .footer{margin-top:28px;color:var(--muted)}
-    .footer small{font-size:13px}
-    .footer a{color:inherit;text-decoration:underline}
-    .muted{color:var(--muted)}
-    .consent{display:flex;align-items:center;gap:10px;margin-right:16px}
-    .consent a{text-decoration:underline}
-
-    /* stable widths / ellipsis */
-    table{table-layout:fixed}
-    :is(#today,#avg,#mine) th, :is(#today,#avg,#mine) td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    :is(#today,#avg,#mine) th:nth-child(1), :is(#today,#avg,#mine) td:nth-child(1){width:60px}
-    :is(#today,#avg,#mine) th:nth-child(3), :is(#today,#avg,#mine) td:nth-child(3){width:80px}
-
-    .namecell{display:flex;align-items:center;gap:6px;min-width:0}
-    .namecell .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .namecell a{flex:0 0 auto}
-
-    /* no horizontal scroll */
-    html,body{overflow-x:hidden}
-    header>.row{flex:1 1 640px;min-width:0}
-    @media (max-width:600px){
-      .brand{font-size:26px}
-      .consent{width:100%;margin-right:0}
-      #authRow{width:100%;gap:8px}
-      .g_id_signin{transform:scale(.88);transform-origin:left top}
-      #authRow .btn{flex:0 0 auto}
+    :root{
+      --bg:#fafafa; --card:#fff; --line:#eee; --muted:#666; --ink:#111;
+      --accent:#4f46e5; --accent-ink:#fff; --good:#16a34a; --bad:#dc2626
     }
-
-    /* section tints */
-    .card--pl{background:#F5F0FF;border-color:#E6DDFF}
-    .card--me{background:#EDF9F4;border-color:#D1F0E2}
-    .card--me, .card--me ~ .card{background:#EDF9F4;border-color:#D1F0E2}
-
-    /* hard-hide auth bits when signed in */
-    body.signedin .consent,
-    body.signedin .g_id_signin,
-    body.signedin #useEmail{display:none !important;}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{font:16px system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
+    header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;z-index:10}
+    .brand{display:flex;gap:10px;align-items:center}
+    .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+    .brand h1{font-size:22px;margin:0}
+    .sub{font-size:12px;color:var(--muted);margin-top:2px}
+    .auth{display:flex;align-items:center;gap:10px}
+    .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
+    main{max-width:980px;margin:20px auto;padding:0 16px}
+    .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .grow{flex:1 1 260px}
+    .controls .pill{display:inline-flex;gap:8px;border:1px solid var(--line);border-radius:999px;padding:4px;background:#f5f5f5}
+    .controls button{border:0;background:transparent;padding:6px 10px;border-radius:999px;cursor:pointer;color:var(--muted)}
+    .controls button.active{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+    .search{display:flex;gap:8px}
+    input[type="text"], input[type="number"]{
+      width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;outline:none
+    }
+    input[type="number"]{max-width:140px}
+    .btn{border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:10px;cursor:pointer}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+    .btn.warn{border-color:#f3dada;background:#fff;color:var(--bad)}
+    .btn.icon{padding:6px 9px;display:inline-flex;align-items:center;gap:6px}
+    .btn.sm{padding:4px 8px;font-size:13px;border-radius:8px}
+    .right{margin-left:auto}
+    h2{font-size:18px;margin:0 0 10px}
+    .hint{font-size:13px;color:var(--muted);margin:0 0 8px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px;border-top:1px solid var(--line);text-align:left}
+    thead th{font-weight:600;color:#333;background:#faf7ff}
+    tbody tr:hover{background:#fafafa}
+    .num{width:48px;text-align:right}
+    .w150{width:150px}
+    .mono{font-variant-numeric:tabular-nums}
+    .section{background:#f5f0ff;border:1px solid #eee;border-radius:12px;padding:12px 12px 4px;margin-bottom:16px}
+    .section > h3{margin:4px 8px 8px;font-size:16px}
+    .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .spacer{flex:1}
+    .good{color:var(--good)}
+    .muted{color:var(--muted)}
+    .my{margin:12px 0}
   </style>
 </head>
 <body>
   <header>
-    <div class="brand">
-      Zip Community Leaderboard
-      <div class="muted" style="font-size:14px;margin-top:2px;font-weight:normal;">
-        <p style="margin:0">Unofficial, fan-created community leaderboard for the Zip puzzle.</p>
-        <p style="margin:0">Not affiliated with or endorsed by LinkedIn.</p>
+    <div>
+      <div class="brand">
+        <div class="dot"></div>
+        <h1>Zip Community Leaderboard</h1>
       </div>
+      <div class="sub">Unofficial, fan-created community leaderboard for the Zip puzzle. Not affiliated with or endorsed by LinkedIn.</div>
     </div>
-
-    <div class="row">
-      <label class="consent" title="Required to use the service">
-        <input type="checkbox" id="accept">
-        <span>To log in, I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms</a> and acknowledge the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
-      </label>
-
-      <div id="authRow" class="row hide">
-        <div id="g_id_onload"
-          data-client_id="368132008439-lskm63n5dmsv9r43cchmrjpdmhfqaa1p.apps.googleusercontent.com"
-          data-callback="onGoogle"
-          data-auto_select="false"
-          data-auto_prompt="false"
-          data-itp_support="true"></div>
-        <div class="g_id_signin" data-type="standard" data-size="medium"></div>
-
-        <span class="btn" id="useEmail">Use email instead</span>
-        <button class="btn hide" id="signOut">Sign out</button>
-      </div>
+    <div class="auth">
+      <div id="gsi" style="display:none"></div>
+      <img id="avatar" class="avatar" alt="" src="" style="display:none">
+      <button id="signout" class="btn" style="display:none">Sign out</button>
     </div>
   </header>
 
-  <div class="card card--pl">
-    <h2>Public Leaderboards</h2>
-    <small>Visible to everyone. Only <em>Name</em> + time are shown (with a LinkedIn link if you added one).</small>
-  </div>
+  <main>
+    <div class="section">
+      <h3>Public Leaderboards</h3>
+      <p class="hint">Visible to everyone. Only <em>Name</em> + time are shown (with a LinkedIn link if you added one).</p>
+    </div>
 
-  <div class="grid">
-    <div class="card card--pl">
-      <div class="row-between">
-        <h3 id="todayTitle">Puzzle #</h3>
-        <div class="row">
-          <select id="puzzleSel" title="Choose a day/puzzle"></select>
-          <button class="btn" id="refresh" title="Reload data">Reload</button>
+    <!-- Daily leaderboard -->
+    <section class="panel my">
+      <div class="flex">
+        <h2 id="dayTitle">—</h2>
+        <span class="spacer"></span>
+        <select id="puzzleSelect" class="btn"></select>
+        <button id="reloadDaily" class="btn icon"><span>Reload</span></button>
+      </div>
+      <table id="dailyTable">
+        <thead>
+          <tr>
+            <th class="num">#</th>
+            <th>Player</th>
+            <th class="mono">Time</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Averages -->
+    <section class="panel my">
+      <div class="flex">
+        <h2>Average time (per person)</h2>
+      </div>
+      <table id="avgTable">
+        <thead>
+          <tr>
+            <th class="num">#</th>
+            <th>Player</th>
+            <th class="mono">Avg Time</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Private area -->
+    <section class="panel my" id="privateArea" style="background:#eaf7ef;border-color:#d2e9d9">
+      <h2>My private profile</h2>
+      <p class="hint">Only you can see and edit this after signing in.</p>
+
+      <!-- PERSONAL INFO ROW + Delete my data moved here -->
+      <div class="row" style="align-items:flex-end;margin-bottom:10px">
+        <div class="grow">
+          <label class="hint">Name</label>
+          <input id="nameInput" type="text" placeholder="Your name">
+        </div>
+        <div class="grow">
+          <label class="hint">LinkedIn URL (optional)</label>
+          <input id="liInput" type="text" placeholder="https://www.linkedin.com/in/...">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="saveProfile" class="btn primary">Save</button>
+          <span id="saveProfileState" class="muted"></span>
+          <!-- DELETE MY DATA is now in this first row -->
+          <button id="deleteAll" class="btn warn">Delete my data</button>
         </div>
       </div>
-      <table id="today"><thead><tr><th>#</th><th>Player</th><th>Time</th></tr></thead><tbody></tbody></table>
-    </div>
-    <div class="card card--pl">
-      <h3>Average time (per person)</h3>
-      <table id="avg"><thead><tr><th>#</th><th>Player</th><th>Avg Time</th></tr></thead><tbody></tbody></table>
-    </div>
-  </div>
 
-  <div class="card card--me">
-    <h2>My private profile</h2>
-    <small>Only you can see and edit this after signing in.</small>
-
-    <div id="emailBox" class="hide" style="margin:12px 0 4px">
-      <div class="row">
-        <label>Email <input id="eml" placeholder="you@example.com"></label>
-        <button class="btn" id="sendCode">Get code</button>
-        <label>Code <input id="otp" placeholder="6-digit"></label>
-        <button class="btn" id="verifyCode">Verify</button>
-        <span class="toast" id="otpMsg"></span>
-      </div>
-      <small class="muted">We’ll send a one-time code only to sign you in. No marketing. The code expires in 10 minutes.</small>
-      <div style="height:1px;background:#eee;margin:12px 0"></div>
-    </div>
-
-    <div id="private" class="hide">
-      <div class="row" style="margin-top:10px">
-        <label>Name
-          <input id="name" maxlength="80" placeholder="Shown on leaderboards">
-        </label>
-        <label>LinkedIn URL (optional)
-          <input id="li" maxlength="200" placeholder="https://www.linkedin.com/in/…">
-        </label>
-        <button class="btn" id="saveProfile">Save</button>
-        <span class="toast" id="nameMsg"></span>
+      <!-- SUBMIT TIME -->
+      <div class="row" style="align-items:flex-end">
+        <div>
+          <label class="hint">Puzzle #</label>
+          <input id="puzzleInput" type="number" min="1" placeholder="e.g., 194">
+        </div>
+        <div>
+          <label class="hint">Time (mm:ss)</label>
+          <input id="timeInput" type="text" placeholder="e.g., 03:12">
+        </div>
+        <div>
+          <button id="submitTime" class="btn">Submit</button>
+          <span id="submitState" class="muted"></span>
+        </div>
       </div>
 
-      <div class="row" style="margin-top:10px">
-        <label>Puzzle # <input id="pNum" type="number" min="1" placeholder="e.g., 193"></label>
-        <label>Time (mm:ss) <input id="pTime" placeholder="0:08" pattern="\\d{1,2}:[0-5]\\d"></label>
-        <button class="btn" id="submitScore">Submit</button>
-        <span class="toast" id="msg"></span>
-        <button class="btn right" id="deleteMe" title="Delete profile & all scores">Delete my data</button>
-      </div>
+      <!-- MY BEST SCORES -->
+      <h3 class="my" style="margin-top:16px">My best scores</h3>
+      <table id="mineTable">
+        <thead>
+          <tr>
+            <th class="num">#</th>
+            <th>Puzzle</th>
+            <th class="w150">Date and Time</th>
+            <th class="mono">Time</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
 
-      <h3 style="margin-top:16px">My best scores</h3>
-      <table id="mine"><thead><tr><th>#</th><th>Puzzle</th><th>Time</th></tr></thead><tbody></tbody></table>
-    </div>
+  <script>
+    /**********************
+     * CONFIG
+     **********************/
+    const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_OAUTH_CLIENT_ID"; // set this
+    const CLOUD_ENDPOINT   = ""; // Apps Script WebApp URL (leave empty for Local Demo Mode)
 
-    <div id="pleaseSignIn">
-      <small>Sign in above to manage your private profile and submit scores.</small>
-      <div class="muted" style="margin-top:6px">
-        <small>
-          By signing in you agree to our
-          <a href="terms.html" target="_blank" rel="noopener">Terms</a> and
-          <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
-        </small>
-      </div>
-    </div>
-  </div>
+    /**********************
+     * UTIL
+     **********************/
+    const $ = sel => document.querySelector(sel);
+    const fmtMMSS = s => {
+      if (isNaN(s) || s < 0) return "";
+      const m = Math.floor(s/60), ss = Math.floor(s%60);
+      return `${String(m).padStart(1,'0')}:${String(ss).padStart(2,'0')}`;
+    };
+    const parseMMSS = (txt) => {
+      const m = /^(\d{1,3}):([0-5]\d)$/.exec((txt||"").trim());
+      if (!m) return NaN;
+      return (+m[1])*60 + (+m[2]);
+    };
+    const fmtDateTime = (t) => {
+      const d = new Date(t);
+      const y = d.getFullYear(), M = String(d.getMonth()+1).padStart(2,'0'), D = String(d.getDate()).padStart(2,'0');
+      const h = String(d.getHours()).padStart(2,'0'), m = String(d.getMinutes()).padStart(2,'0');
+      return `${y}-${M}-${D} ${h}:${m}`;
+    };
+    const uid = () => 'r_'+Math.random().toString(36).slice(2)+Date.now();
 
-<script>
-const APPS = 'https://script.google.com/macros/s/AKfycbxNN6VLQeEkC0oA6AXbx1jO9XWPT-NBv99_UEvzdkGrSAbHwizBm-j7WVhlTWI1w8gy/exec';
+    /**********************
+     * AUTH (GSI or Demo)
+     **********************/
+    let currentUser = null; // {uid, name, picture, email?}
 
-let provider = localStorage.getItem('zip_provider') || null;
-let idToken = localStorage.getItem('zip_idtoken') || null;
-let sessionToken = localStorage.getItem('zip_session') || null;
-
-/* consent gate */
-function isAccepted(){ return localStorage.getItem('zip_accept') === '1'; }
-function setGate(on){
-  document.getElementById('authRow').classList.toggle('hide', !on);
-}
-(function initConsent(){
-  const box = document.getElementById('accept');
-  const accepted = isAccepted();
-  box.checked = accepted;
-  setGate(accepted);
-  box.addEventListener('change', (e)=>{
-    const ok = !!e.target.checked;
-    localStorage.setItem('zip_accept', ok ? '1' : '0');
-    setGate(ok);
-    if (provider) setSignedInUI(true);
-  });
-})();
-
-/* UI helpers */
-function showPrivate(on){
-  document.getElementById('private').classList.toggle('hide', !on);
-  document.getElementById('pleaseSignIn').classList.toggle('hide', on);
-  document.getElementById('signOut').classList.toggle('hide', !on);
-}
-function setSignedInUI(loggedIn){
-  document.body.classList.toggle('signedin', loggedIn);
-  const authRow = document.getElementById('authRow');
-  if (authRow) authRow.classList.toggle('hide', !isAccepted() && !loggedIn);
-}
-function linkHtml(url){ return url ? `<a href="${url}" target="_blank" rel="noopener" title="LinkedIn">↗</a>` : ''; }
-function renderRows(id, rows){
-  const tb = document.querySelector('#'+id+' tbody'); tb.innerHTML='';
-  rows.forEach((r,i)=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${i+1}</td><td class="namecell"><span class="nm">${r.player || ''}</span>${linkHtml(r.linkedin)}</td><td>${r.time || ''}</td>`;
-    tb.appendChild(tr);
-  });
-}
-function setTodayTitle(_puzzle, label){
-  document.getElementById('todayTitle').textContent = label || 'Puzzle #';
-}
-
-/* puzzles dropdown */
-function populatePuzzles(list, latest){
-  const sel = document.getElementById('puzzleSel');
-  sel.innerHTML = '';
-  (list||[]).sort((a,b)=> b.puzzle - a.puzzle).forEach(it=>{
-    const opt = document.createElement('option');
-    opt.value = it.puzzle;
-    opt.textContent = `${it.date} — #${it.puzzle}`;
-    if (String(it.puzzle) === String(latest)) opt.selected = true;
-    sel.appendChild(opt);
-  });
-  const label = sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : ('Puzzle #'+(latest||''));
-  setTodayTitle(sel.value || latest, label);
-}
-
-/* Public boards */
-async function loadBoards(puzzle){
-  try{
-    const q = puzzle ? ('&puzzle='+encodeURIComponent(puzzle)) : '';
-    const r = await fetch(APPS+'?action=leaderboard'+q);
-    const j = await r.json();
-    if (j.puzzles) populatePuzzles(j.puzzles, puzzle || j.latestPuzzle);
-    renderRows('today', j.today||[]);
-    renderRows('avg',   j.averages||[]);
-    if (j.latestPuzzle && !document.getElementById('pNum').value) {
-      document.getElementById('pNum').value = j.latestPuzzle;
+    function setSignedInUI() {
+      if (currentUser) {
+        $('#avatar').src = currentUser.picture || '';
+        $('#avatar').style.display = currentUser.picture ? 'inline-block' : 'none';
+        $('#signout').style.display = 'inline-block';
+        $('#gsi').style.display = 'none';
+        $('#privateArea').style.display = 'block';
+      } else {
+        $('#avatar').style.display = 'none';
+        $('#signout').style.display = 'none';
+        $('#gsi').style.display = 'block';
+        $('#privateArea').style.display = 'none';
+      }
     }
-  }catch(e){ console.error(e); }
-}
-document.getElementById('puzzleSel').addEventListener('change', (e)=>{
-  const opt = e.target.selectedOptions[0];
-  setTodayTitle(e.target.value, opt ? opt.textContent : '');
-  loadBoards(e.target.value);
-});
-document.getElementById('refresh').onclick = ()=>{
-  const v = document.getElementById('puzzleSel').value;
-  loadBoards(v);
-};
 
-/* Auth */
-document.getElementById('useEmail').onclick = ()=>{
-  if (!isAccepted()){ alert('Please accept the Terms and Privacy Policy first.'); return; }
-  document.getElementById('emailBox').classList.remove('hide');
-};
+    function initAuth() {
+      if (!GOOGLE_CLIENT_ID) {
+        // Demo fallback
+        currentUser = { uid: 'demo-user', name: 'Demo User', picture: '' };
+        setSignedInUI();
+        loadAll();
+        return;
+      }
+      window.google?.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse
+      });
+      window.google?.accounts.id.renderButton(
+        document.getElementById("gsi"),
+        { theme: "outline", size: "medium" }
+      );
+      document.getElementById('signout').onclick = () => {
+        window.google?.accounts.id.disableAutoSelect();
+        currentUser = null;
+        setSignedInUI();
+        clearTables();
+      };
+    }
 
-document.getElementById('signOut').onclick = async ()=>{
-  try{
-    if (provider==='email' && sessionToken){
-      await fetch(APPS+'?action=logout', {
+    function handleCredentialResponse(resp){
+      // decode JWT (client-side) for profile (non-secure, good enough for UI)
+      const payload = JSON.parse(atob(resp.credential.split('.')[1]));
+      currentUser = {
+        uid: payload.sub,
+        name: payload.name,
+        picture: payload.picture,
+        email: payload.email
+      };
+      setSignedInUI();
+      loadAll();
+    }
+
+    /**********************
+     * STORAGE / API
+     * If CLOUD_ENDPOINT empty => use localStorage
+     **********************/
+    const LS_PROFILE = 'zip_profile';
+    const LS_RESULTS = 'zip_results';
+
+    async function api(action, data) {
+      if (!CLOUD_ENDPOINT) return localApi(action, data);
+      const res = await fetch(CLOUD_ENDPOINT, {
         method:'POST',
-        body: JSON.stringify({action:'logout', sessionToken})
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action, data})
+      });
+      if (!res.ok) throw new Error('Network');
+      return res.json();
+    }
+
+    // Local demo implementation
+    function getAllLS(key){ return JSON.parse(localStorage.getItem(key) || '[]'); }
+    function setAllLS(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+    async function localApi(action, data){
+      let profiles = JSON.parse(localStorage.getItem(LS_PROFILE)||'{}'); // map uid -> {name,linkedin}
+      let results  = getAllLS(LS_RESULTS); // array
+
+      if (action==='getBootstrap'){
+        return {
+          profile: profiles[currentUser?.uid] || null,
+          resultsAll: results
+        };
+      }
+      if (action==='saveProfile'){
+        profiles[currentUser.uid] = { name:data.name||'', linkedin:data.linkedin||'' };
+        localStorage.setItem(LS_PROFILE, JSON.stringify(profiles));
+        return {ok:true};
+      }
+      if (action==='submitTime'){
+        const rec = {
+          id: uid(),
+          uid: currentUser.uid,
+          name: (profiles[currentUser.uid]?.name) || currentUser.name || 'Anonymous',
+          linkedin: profiles[currentUser.uid]?.linkedin || '',
+          puzzle: +data.puzzle,
+          seconds: +data.seconds,
+          ts: Date.now()
+        };
+        results.push(rec);
+        setAllLS(LS_RESULTS, results);
+        return {ok:true, rec};
+      }
+      if (action==='deleteAll'){
+        delete profiles[currentUser.uid];
+        results = results.filter(r => r.uid !== currentUser.uid);
+        localStorage.setItem(LS_PROFILE, JSON.stringify(profiles));
+        setAllLS(LS_RESULTS, results);
+        return {ok:true};
+      }
+      if (action==='deleteResult'){
+        results = results.filter(r => r.id !== data.id || r.uid !== currentUser.uid ? true : false)
+                         .filter(r => !(r.id===data.id && r.uid===currentUser.uid) ? true : false);
+        // simpler: keep if not both match
+        results = getAllLS(LS_RESULTS).filter(r => !(r.id===data.id && r.uid===currentUser.uid));
+        setAllLS(LS_RESULTS, results);
+        return {ok:true};
+      }
+      if (action==='listResults'){ return {results}; }
+      return {ok:false};
+    }
+
+    /**********************
+     * RENDER
+     **********************/
+    let ALL_RESULTS = []; // all users (for public boards)
+    let MY_PROFILE = null;
+
+    function clearTables(){
+      $('#dailyTable tbody').innerHTML = '';
+      $('#avgTable tbody').innerHTML = '';
+      $('#mineTable tbody').innerHTML = '';
+    }
+
+    function renderDaily(puzzleNum){
+      const day = puzzleNum;
+      $('#dayTitle').textContent = `${new Date().toISOString().slice(0,10)} — #${day}`;
+      const rows = ALL_RESULTS
+        .filter(r => r.puzzle === +puzzleNum)
+        .sort((a,b)=>a.seconds-b.seconds);
+      const tb = $('#dailyTable tbody');
+      tb.innerHTML = rows.map((r,i)=>`
+        <tr>
+          <td class="num">${i+1}</td>
+          <td>${linkName(r)}</td>
+          <td class="mono">${fmtMMSS(r.seconds)}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="3" class="muted">No results yet.</td></tr>`;
+    }
+
+    function renderAverages(){
+      const map = new Map(); // uid -> {name,linkedin,sum,count}
+      for (const r of ALL_RESULTS){
+        if (!map.has(r.uid)) map.set(r.uid, {name:r.name, linkedin:r.linkedin, sum:0, count:0});
+        const m = map.get(r.uid); m.sum += r.seconds; m.count += 1;
+      }
+      const rows = Array.from(map.values())
+        .map(v => ({...v, avg: v.sum / v.count}))
+        .sort((a,b)=>a.avg-b.avg);
+      const tb = $('#avgTable tbody');
+      tb.innerHTML = rows.map((r,i)=>`
+        <tr>
+          <td class="num">${i+1}</td>
+          <td>${linkName(r)}</td>
+          <td class="mono">${fmtMMSS(r.avg)}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="3" class="muted">No results yet.</td></tr>`;
+    }
+
+    function linkName(obj){
+      const name = escapeHtml(obj.name || 'Anonymous');
+      const li = (obj.linkedin||'').trim();
+      if (li) return `<a href="${encodeURI(li)}" target="_blank" rel="noopener">${name}</a>`;
+      return name;
+    }
+    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    function renderMine(){
+      const mine = ALL_RESULTS
+        .filter(r => r.uid === currentUser?.uid)
+        .sort((a,b)=>a.seconds-b.seconds || b.ts-a.ts);
+
+      const tb = $('#mineTable tbody');
+      tb.innerHTML = mine.map((r,i)=>`
+        <tr data-id="${r.id}">
+          <td class="num">${i+1}</td>
+          <td>#${r.puzzle}</td>
+          <td>${fmtDateTime(r.ts)}</td>
+          <td class="mono">${fmtMMSS(r.seconds)}</td>
+          <td><button class="btn sm icon warn delOne" data-id="${r.id}" title="Delete this result">🗑 Delete</button></td>
+        </tr>
+      `).join('') || `<tr><td colspan="5" class="muted">No results yet — submit your first!</td></tr>`;
+
+      // hook delete buttons
+      tb.querySelectorAll('.delOne').forEach(btn=>{
+        btn.addEventListener('click', async (e)=>{
+          const id = e.currentTarget.getAttribute('data-id');
+          if (!confirm('Delete this result?')) return;
+          await api('deleteResult', {id});
+          await bootstrap(); // reload data
+        });
       });
     }
-  }catch(_){}
-  localStorage.removeItem('zip_idtoken'); localStorage.removeItem('zip_session'); localStorage.removeItem('zip_provider');
-  provider = idToken = sessionToken = null;
-  showPrivate(false);
-  setSignedInUI(false);
-  setGate(isAccepted());
-};
 
-window.onGoogle = (resp) => {
-  if (!isAccepted()){ alert('Please accept the Terms and Privacy Policy first.'); return; }
-  idToken = resp.credential;
-  provider = 'google';
-  localStorage.setItem('zip_idtoken', idToken);
-  localStorage.setItem('zip_provider', provider);
-  initMe();
-};
+    /**********************
+     * LOAD / BOOTSTRAP
+     **********************/
+    async function bootstrap(){
+      if (!currentUser) return;
+      const res = await api('getBootstrap', {});
+      MY_PROFILE = res.profile || null;
+      ALL_RESULTS = res.resultsAll || [];
+      // fill profile inputs
+      $('#nameInput').value = MY_PROFILE?.name || currentUser.name || '';
+      $('#liInput').value   = MY_PROFILE?.linkedin || '';
 
-/* Email OTP */
-document.getElementById('sendCode').onclick = async ()=>{
-  if (!isAccepted()){ alert('Please accept the Terms and Privacy Policy first.'); return; }
-  const email = document.getElementById('eml').value.trim();
-  const msg = document.getElementById('otpMsg'); msg.textContent = 'Sending...';
-  try{
-    const r = await fetch(APPS+'?action=requestOtp', {
-      method:'POST',
-      body: JSON.stringify({action:'requestOtp', email})
+      // puzzle selector (collect distinct)
+      const puzzles = Array.from(new Set(ALL_RESULTS.map(r=>r.puzzle))).sort((a,b)=>a-b);
+      const sel = $('#puzzleSelect');
+      sel.innerHTML = (puzzles.length? puzzles : [194]).map(p=>`<option value="${p}">${new Date().toISOString().slice(0,10)} — #${p}</option>`).join('');
+      renderDaily(sel.value);
+      renderAverages();
+      renderMine();
+    }
+
+    function loadAll(){ bootstrap(); }
+
+    /**********************
+     * EVENTS
+     **********************/
+    window.addEventListener('DOMContentLoaded', ()=>{
+      initAuth();
+
+      $('#saveProfile')?.addEventListener('click', async ()=>{
+        const name = $('#nameInput').value.trim();
+        const linkedin = $('#liInput').value.trim();
+        await api('saveProfile', {name, linkedin});
+        $('#saveProfileState').textContent = 'Saved ✓';
+        setTimeout(()=>$('#saveProfileState').textContent='', 1500);
+        await bootstrap();
+      });
+
+      $('#submitTime')?.addEventListener('click', async ()=>{
+        const puzzle = +$('#puzzleInput').value;
+        const seconds = parseMMSS($('#timeInput').value);
+        if (!puzzle || isNaN(seconds)) { $('#submitState').textContent = 'Enter valid puzzle and mm:ss time'; return; }
+        $('#submitState').textContent = 'Saving…';
+        await api('submitTime', {puzzle, seconds});
+        $('#submitState').textContent = 'Saved ✓';
+        setTimeout(()=>$('#submitState').textContent='', 1500);
+        $('#timeInput').value = '';
+        await bootstrap();
+      });
+
+      $('#deleteAll')?.addEventListener('click', async ()=>{
+        if (!confirm('Delete ALL your profile and results? This cannot be undone.')) return;
+        await api('deleteAll', {});
+        await bootstrap();
+      });
+
+      $('#puzzleSelect')?.addEventListener('change', e=>{
+        renderDaily(e.target.value);
+      });
+      $('#reloadDaily')?.addEventListener('click', ()=> renderDaily($('#puzzleSelect').value));
     });
-    const j = await r.json();
-    if (!j.ok) throw new Error(j.error||'Failed');
-    msg.textContent = 'Code sent. Check your inbox (valid 10 min).';
-  }catch(e){ msg.textContent = 'Error: '+e.message; }
-};
-
-document.getElementById('verifyCode').onclick = async ()=>{
-  if (!isAccepted()){ alert('Please accept the Terms and Privacy Policy first.'); return; }
-  const email = document.getElementById('eml').value.trim();
-  const code = document.getElementById('otp').value.trim();
-  const msg = document.getElementById('otpMsg'); msg.textContent = 'Verifying...';
-  try{
-    const r = await fetch(APPS+'?action=verifyOtp', {
-      method:'POST',
-      body: JSON.stringify({action:'verifyOtp', email, code})
-    });
-    const j = await r.json();
-    if (!j.ok) throw new Error(j.error||'Failed');
-    sessionToken = j.sessionToken; provider='email';
-    localStorage.setItem('zip_session', sessionToken);
-    localStorage.setItem('zip_provider', provider);
-    msg.textContent = 'Signed in ✔';
-    initMe();
-  }catch(e){ msg.textContent = 'Error: '+e.message; }
-};
-
-/* Private actions */
-document.getElementById('saveProfile').onclick = async ()=>{
-  const msg = document.getElementById('nameMsg'); msg.textContent = 'Saving...';
-  const body = {
-    action:'upsertProfile',
-    name: document.getElementById('name').value.trim() || 'Player',
-    linkedin: document.getElementById('li').value.trim()
-  };
-  if (provider==='google' && idToken) body.idToken = idToken;
-  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
-  try{
-    const r = await fetch(APPS+'?action=upsertProfile', {
-      method:'POST',
-      body: JSON.stringify(body)
-    });
-    const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
-    msg.textContent = 'Saved ✔';
-    await loadBoards(document.getElementById('puzzleSel').value);
-  }catch(e){ msg.textContent = 'Error: '+e.message; }
-};
-
-document.getElementById('submitScore').onclick = async ()=>{
-  const msg = document.getElementById('msg'); msg.textContent = 'Saving...';
-  const body = {
-    action:'submitScore',
-    puzzle: +document.getElementById('pNum').value,
-    time: document.getElementById('pTime').value.trim()
-  };
-  if (provider==='google' && idToken) body.idToken = idToken;
-  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
-  try{
-    const r = await fetch(APPS+'?action=submitScore', {
-      method:'POST',
-      body: JSON.stringify(body)
-    });
-    const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
-    msg.textContent = 'Saved ✔';
-    await initMe();
-    await loadBoards(document.getElementById('puzzleSel').value);
-  }catch(e){ msg.textContent = 'Error: '+e.message; }
-};
-
-document.getElementById('deleteMe').onclick = async ()=>{
-  if (!confirm('Delete your profile and all scores? This cannot be undone.')) return;
-  const msg = document.getElementById('msg'); msg.textContent = 'Deleting...';
-  const body = { action:'deleteMe' };
-  if (provider==='google' && idToken) body.idToken = idToken;
-  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
-  try{
-    const r = await fetch(APPS+'?action=deleteMe', {
-      method:'POST',
-      body: JSON.stringify(body)
-    });
-    const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
-    msg.textContent = 'Deleted ✔';
-    localStorage.removeItem('zip_idtoken'); localStorage.removeItem('zip_session'); localStorage.removeItem('zip_provider');
-    provider = idToken = sessionToken = null;
-    showPrivate(false);
-    setSignedInUI(false);
-    setGate(isAccepted());
-    loadBoards(document.getElementById('puzzleSel').value);
-  }catch(e){ msg.textContent = 'Error: '+e.message; }
-};
-
-/* Private area */
-async function initMe(){
-  if (provider==='google' && idToken){
-    const r = await fetch(APPS+'?action=me&idToken='+encodeURIComponent(idToken));
-    const j = await r.json();
-    if (j.error){ showPrivate(false); setSignedInUI(false); return; }
-    showPrivate(true); setSignedInUI(true);
-    document.getElementById('name').value = (j.profile && j.profile.name) || 'Player';
-    document.getElementById('li').value = (j.profile && j.profile.linkedin) || '';
-    const mine = (j.scores||[]).sort((a,b)=>a.seconds-b.seconds);
-    const tb = document.querySelector('#mine tbody'); tb.innerHTML='';
-    mine.forEach((r,i)=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${i+1}</td><td>${r.puzzle}</td><td>${r.time}</td>`;
-      tb.appendChild(tr);
-    });
-    return;
-  }
-  if (provider==='email' && sessionToken){
-    const r = await fetch(APPS+'?action=me&sessionToken='+encodeURIComponent(sessionToken));
-    const j = await r.json();
-    if (j.error){ showPrivate(false); setSignedInUI(false); return; }
-    showPrivate(true); setSignedInUI(true);
-    document.getElementById('name').value = (j.profile && j.profile.name) || 'Player';
-    document.getElementById('li').value = (j.profile && j.profile.linkedin) || '';
-    const mine = (j.scores||[]).sort((a,b)=>a.seconds-b.seconds);
-    const tb = document.querySelector('#mine tbody'); tb.innerHTML='';
-    mine.forEach((r,i)=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${i+1}</td><td>${r.puzzle}</td><td>${r.time}</td>`;
-      tb.appendChild(tr);
-    });
-    return;
-  }
-  showPrivate(false); setSignedInUI(false);
-}
-
-/* boot */
-loadBoards();
-if (provider) initMe();
-</script>
-
-<footer class="footer">
-  <p class="muted" style="margin-top:8px">
-    “Zip” and “LinkedIn” are trademarks of LinkedIn Corporation. This is an independent community project and is not affiliated with, endorsed by, or sponsored by LinkedIn.
-  </p>
-</footer>
+  </script>
 </body>
 </html>
+
