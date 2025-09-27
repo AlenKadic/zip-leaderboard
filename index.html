@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <title>Zip Community Leaderboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- (4) Basic CSP -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self' https://accounts.google.com;
+                 connect-src 'self' https://script.google.com https://oauth2.googleapis.com https://accounts.google.com;
+                 img-src 'self' https: data:;
+                 style-src 'self' 'unsafe-inline';
+                 frame-src https://accounts.google.com;">
 
   <!-- Google Sign-In -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -30,6 +38,11 @@
     .right{margin-left:auto}
     .toast{font-size:14px}
     .namecell a{font-size:12px;margin-left:6px;text-decoration:none}
+    /* (1) Footer + (3) muted helper */
+    .footer{margin-top:28px;color:var(--muted)}
+    .footer small{font-size:13px}
+    .footer a{color:inherit;text-decoration:underline}
+    .muted{color:var(--muted)}
   </style>
 </head>
 <body>
@@ -86,6 +99,8 @@
         <button class="btn" id="verifyCode">Verify</button>
         <span class="toast" id="otpMsg"></span>
       </div>
+      <!-- (3) Notice under OTP row -->
+      <small class="muted">We’ll send a one-time code only to sign you in. No marketing. The code expires in 10 minutes.</small>
       <div style="height:1px;background:#eee;margin:12px 0"></div>
     </div>
 
@@ -351,6 +366,14 @@ document.getElementById('deleteMe').onclick = async ()=>{
 loadBoards();
 if (provider) initMe();
 </script>
+
+<!-- (1) Footer -->
+<footer class="footer">
+  <small>
+    By signing in you agree to our
+    <a href="terms.html" target="_blank" rel="noopener">Terms</a> and
+    <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+  </small>
+</footer>
 </body>
 </html>
-
