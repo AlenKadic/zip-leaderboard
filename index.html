@@ -4,13 +4,17 @@
   <meta charset="utf-8">
   <title>Zip Community Leaderboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- CSP: allow inline scripts so our page JS can run -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
-                 script-src 'self' https://accounts.google.com;
+                 script-src 'self' 'unsafe-inline' https://accounts.google.com;
                  connect-src 'self' https://script.google.com https://oauth2.googleapis.com https://accounts.google.com;
                  img-src 'self' https: data:;
                  style-src 'self' 'unsafe-inline';
                  frame-src https://accounts.google.com;">
+
+  <!-- Google Sign-In -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
@@ -48,7 +52,7 @@
     <div class="brand">Zip Community Leaderboard</div>
 
     <div class="row">
-      <!-- Consent gate sits right next to the sign-in controls -->
+      <!-- Consent gate -->
       <label class="consent" title="Required to use the service">
         <input type="checkbox" id="accept">
         <span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></span>
@@ -56,7 +60,6 @@
 
       <!-- Auth (hidden until acceptance) -->
       <div id="authRow" class="row hide">
-        <!-- Disable One Tap auto-prompt so no bottom-left popup -->
         <div id="g_id_onload"
           data-client_id="368132008439-lskm63n5dmsv9r43cchmrjpdmhfqaa1p.apps.googleusercontent.com"
           data-callback="onGoogle"
@@ -97,6 +100,7 @@
     <h2>My private profile</h2>
     <small>Only you can see and edit this after signing in.</small>
 
+    <!-- Email OTP box -->
     <div id="emailBox" class="hide" style="margin:12px 0 4px">
       <div class="row">
         <label>Email <input id="eml" placeholder="you@example.com"></label>
@@ -109,6 +113,7 @@
       <div style="height:1px;background:#eee;margin:12px 0"></div>
     </div>
 
+    <!-- Private area -->
     <div id="private" class="hide">
       <div class="row" style="margin-top:10px">
         <label>Name
@@ -314,50 +319,6 @@ async function initMe(){
   }
   showPrivate(false);
 }
-
-document.getElementById('saveProfile').onclick = async ()=>{
-  const msg = document.getElementById('nameMsg'); msg.textContent = 'Saving...';
-  const body = { action:'upsertProfile', name: document.getElementById('name').value.trim() || 'Player', linkedin: document.getElementById('li').value.trim() };
-  if (provider==='google' && idToken) body.idToken = idToken;
-  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
-
-  try{
-    const r = await fetch(APPS+'?action=upsertProfile', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
-    msg.textContent = 'Saved ✔';
-    await loadBoards(document.getElementById('puzzleSel').value);
-  }catch(e){ msg.textContent = 'Error: '+e.message; }
-};
-
-document.getElementById('submitScore').onclick = async ()=>{
-  const msg = document.getElementById('msg'); msg.textContent = 'Saving...';
-  const body = { action:'submitScore', puzzle: +document.getElementById('pNum').value, time: document.getElementById('pTime').value.trim() };
-  if (provider==='google' && idToken) body.idToken = idToken;
-  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
-
-  try{
-    const r = await fetch(APPS+'?action=submitScore', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
-    msg.textContent = 'Saved ✔';
-    await initMe(); await loadBoards(document.getElementById('puzzleSel').value);
-  }catch(e){ msg.textContent = 'Error: '+e.message; }
-};
-
-document.getElementById('deleteMe').onclick = async ()=>{
-  if (!confirm('Delete your profile and all scores? This cannot be undone.')) return;
-  const msg = document.getElementById('msg'); msg.textContent = 'Deleting...';
-  const body = { action:'deleteMe' };
-  if (provider==='google' && idToken) body.idToken = idToken;
-  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
-  try{
-    const r = await fetch(APPS+'?action=deleteMe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
-    msg.textContent = 'Deleted ✔';
-    localStorage.removeItem('zip_idtoken'); localStorage.removeItem('zip_session'); localStorage.removeItem('zip_provider');
-    provider = idToken = sessionToken = null;
-    showPrivate(false); loadBoards(document.getElementById('puzzleSel').value);
-  }catch(e){ msg.textContent = 'Error: '+e.message; }
-};
 
 /* ---------- boot ---------- */
 loadBoards();
