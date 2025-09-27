@@ -70,8 +70,6 @@
     /* === Section tints === */
     .card--pl { background:#F5F0FF; border-color:#E6DDFF; } /* Public Leaderboards + its tables */
     .card--me { background:#EDF9F4; border-color:#D1F0E2; } /* My private profile */
-
-    /* Future-proof: any cards that appear *after* the private card also get lime */
     .card--me, .card--me ~ .card { background:#EDF9F4; border-color:#D1F0E2; }
   </style>
 </head>
@@ -201,6 +199,7 @@ function setGate(on){
     const ok = !!e.target.checked;
     localStorage.setItem('zip_accept', ok ? '1' : '0');
     setGate(ok);
+    if (provider) setSignedInUI(true); // keep login area hidden when already signed in
   });
 })();
 
@@ -209,6 +208,17 @@ function showPrivate(on){
   document.getElementById('private').classList.toggle('hide', !on);
   document.getElementById('pleaseSignIn').classList.toggle('hide', on);
   document.getElementById('signOut').classList.toggle('hide', !on);
+}
+function setSignedInUI(loggedIn){
+  const consent = document.querySelector('.consent');
+  const gBtn = document.querySelector('.g_id_signin');
+  const emailBtn = document.getElementById('useEmail');
+  const authRow = document.getElementById('authRow');
+  if (consent) consent.classList.toggle('hide', loggedIn);
+  if (gBtn) gBtn.classList.toggle('hide', loggedIn);
+  if (emailBtn) emailBtn.classList.toggle('hide', loggedIn);
+  if (authRow) authRow.classList.toggle('hide', !loggedIn && !isAccepted());
+  document.getElementById('signOut').classList.toggle('hide', !loggedIn);
 }
 function linkHtml(url){ return url ? `<a href="${url}" target="_blank" rel="noopener" title="LinkedIn">↗</a>` : ''; }
 function renderRows(id, rows){
@@ -282,9 +292,10 @@ document.getElementById('signOut').onclick = async ()=>{
   localStorage.removeItem('zip_idtoken'); localStorage.removeItem('zip_session'); localStorage.removeItem('zip_provider');
   provider = idToken = sessionToken = null;
   showPrivate(false);
+  setSignedInUI(false);
+  setGate(isAccepted());
 };
 
-/* Google One Tap callback */
 window.onGoogle = (resp) => {
   if (!isAccepted()){ alert('Please accept the Terms and Privacy Policy first.'); return; }
   idToken = resp.credential;
@@ -324,13 +335,83 @@ document.getElementById('verifyCode').onclick = async ()=>{
   }catch(e){ msg.textContent = 'Error: '+e.message; }
 };
 
+/* ---------- Private actions ---------- */
+// Save profile
+document.getElementById('saveProfile').onclick = async ()=>{
+  const msg = document.getElementById('nameMsg'); msg.textContent = 'Saving...';
+  const body = {
+    action:'upsertProfile',
+    name: document.getElementById('name').value.trim() || 'Player',
+    linkedin: document.getElementById('li').value.trim()
+  };
+  if (provider==='google' && idToken) body.idToken = idToken;
+  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
+
+  try{
+    const r = await fetch(APPS+'?action=upsertProfile', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
+    msg.textContent = 'Saved ✔';
+    await loadBoards(document.getElementById('puzzleSel').value);
+  }catch(e){ msg.textContent = 'Error: '+e.message; }
+};
+
+// Submit score
+document.getElementById('submitScore').onclick = async ()=>{
+  const msg = document.getElementById('msg'); msg.textContent = 'Saving...';
+  const body = {
+    action:'submitScore',
+    puzzle: +document.getElementById('pNum').value,
+    time: document.getElementById('pTime').value.trim()
+  };
+  if (provider==='google' && idToken) body.idToken = idToken;
+  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
+
+  try{
+    const r = await fetch(APPS+'?action=submitScore', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
+    msg.textContent = 'Saved ✔';
+    await initMe();
+    await loadBoards(document.getElementById('puzzleSel').value);
+  }catch(e){ msg.textContent = 'Error: '+e.message; }
+};
+
+// Delete all data
+document.getElementById('deleteMe').onclick = async ()=>{
+  if (!confirm('Delete your profile and all scores? This cannot be undone.')) return;
+  const msg = document.getElementById('msg'); msg.textContent = 'Deleting...';
+  const body = { action:'deleteMe' };
+  if (provider==='google' && idToken) body.idToken = idToken;
+  if (provider==='email' && sessionToken) body.sessionToken = sessionToken;
+
+  try{
+    const r = await fetch(APPS+'?action=deleteMe', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const j = await r.json(); if (!j.ok) throw new Error(j.error||'Failed');
+    msg.textContent = 'Deleted ✔';
+    localStorage.removeItem('zip_idtoken'); localStorage.removeItem('zip_session'); localStorage.removeItem('zip_provider');
+    provider = idToken = sessionToken = null;
+    showPrivate(false);
+    setSignedInUI(false);
+    setGate(isAccepted());
+    loadBoards(document.getElementById('puzzleSel').value);
+  }catch(e){ msg.textContent = 'Error: '+e.message; }
+};
+
 /* ---------- Private area ---------- */
 async function initMe(){
   if (provider==='google' && idToken){
     const r = await fetch(APPS+'?action=me&idToken='+encodeURIComponent(idToken));
     const j = await r.json();
-    if (j.error){ showPrivate(false); return; }
-    showPrivate(true);
+    if (j.error){ showPrivate(false); setSignedInUI(false); return; }
+    showPrivate(true); setSignedInUI(true);
     document.getElementById('name').value = (j.profile && j.profile.name) || 'Player';
     document.getElementById('li').value = (j.profile && j.profile.linkedin) || '';
     const mine = (j.scores||[]).sort((a,b)=>a.seconds-b.seconds);
@@ -345,8 +426,8 @@ async function initMe(){
   if (provider==='email' && sessionToken){
     const r = await fetch(APPS+'?action=me&sessionToken='+encodeURIComponent(sessionToken));
     const j = await r.json();
-    if (j.error){ showPrivate(false); return; }
-    showPrivate(true);
+    if (j.error){ showPrivate(false); setSignedInUI(false); return; }
+    showPrivate(true); setSignedInUI(true);
     document.getElementById('name').value = (j.profile && j.profile.name) || 'Player';
     document.getElementById('li').value = (j.profile && j.profile.linkedin) || '';
     const mine = (j.scores||[]).sort((a,b)=>a.seconds-b.seconds);
@@ -358,7 +439,7 @@ async function initMe(){
     });
     return;
   }
-  showPrivate(false);
+  showPrivate(false); setSignedInUI(false);
 }
 
 /* ---------- boot ---------- */
@@ -373,4 +454,5 @@ if (provider) initMe();
 </footer>
 </body>
 </html>
+
 
