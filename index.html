@@ -45,6 +45,21 @@
     .muted{color:var(--muted)}
     .consent{display:flex;align-items:center;gap:10px;margin-right:16px}
     .consent a{text-decoration:underline}
+
+    /* --- NEW: prevent header overflow on mobile --- */
+    html, body { overflow-x: hidden; }              /* stop any horizontal scroll */
+    header > .row { flex: 1 1 640px; min-width: 0;} /* let the right block shrink instead of pushing */
+
+    @media (max-width: 600px) {
+      .brand { font-size: 26px; }
+      .consent { width: 100%; margin-right: 0; }    /* consent on its own row */
+      #authRow { width: 100%; gap: 8px; }           /* buttons on the next row */
+      .g_id_signin {
+        transform: scale(0.92);                     /* gently shrink Google button */
+        transform-origin: left top;
+      }
+      #authRow .btn { flex: 0 0 auto; }             /* keep email button compact */
+    }
   </style>
 </head>
 <body>
@@ -99,7 +114,7 @@
     </div>
     <div class="card">
       <h3>Average time (per person)</h3>
-      <table id="avg"><thead><tr><th>#</th><th>Player</th><th>Avg</th></tr></thead><tbody></tbody></table>
+      <table id="avg"><thead><tr><th>#</th><th>Player</th><th>Avg Time</th></tr></thead><tbody></tbody></table>
     </div>
   </div>
 
@@ -351,3 +366,4 @@ if (provider) initMe();
 </footer>
 </body>
 </html>
+
