@@ -37,6 +37,26 @@
     .right{margin-left:auto}
     .toast{font-size:14px}
     .namecell a{font-size:12px;margin-left:6px;text-decoration:none}
+
+    /* Bigger, high-contrast LinkedIn opener icon */
+    .namecell a.extlink{
+      font-size:16px;
+      margin-left:6px;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:22px; height:22px;
+      border:1px solid #bbb;
+      border-radius:8px;
+      background:#fff;
+      line-height:1;
+    }
+    .namecell a.extlink:hover{ box-shadow:0 2px 6px rgba(0,0,0,.15) }
+    @media (max-width:600px){
+      .namecell a.extlink{ width:20px; height:20px; font-size:15px }
+    }
+
     .footer{margin-top:28px;color:var(--muted)}
     .footer small{font-size:13px}
     .footer a{color:inherit;text-decoration:underline}
@@ -262,7 +282,12 @@ function setSignedInUI(loggedIn){
   const authRow = document.getElementById('authRow');
   if (authRow) authRow.classList.toggle('hide', !isAccepted() && !loggedIn);
 }
-function linkHtml(url){ return url ? `<a href="${url}" target="_blank" rel="noopener" title="LinkedIn">↗</a>` : ''; }
+function linkHtml(url){
+  return url
+    ? `<a class="extlink" href="${url}" target="_blank" rel="noopener"
+         title="Open LinkedIn profile" aria-label="Open LinkedIn profile">↗</a>`
+    : '';
+}
 
 /* RENDER: prefer numeric seconds for public boards */
 function renderRows(id, rows){
