@@ -132,6 +132,7 @@
     </div>
   </div>
 
+  <!-- WINDOW 1: My private profile (form, sign-in message) -->
   <div class="card card--me">
     <h2>My private profile</h2>
     <small>Only you can see and edit this after signing in.</small>
@@ -167,14 +168,6 @@
         <button class="btn" id="submitScore">Submit</button>
         <span class="toast" id="msg"></span>
       </div>
-
-      <h3 style="margin-top:16px">My best scores</h3>
-      <table id="mine">
-        <thead>
-          <tr><th>#</th><th>Puzzle</th><th>Date</th><th>Time</th><th></th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
     </div>
 
     <div id="pleaseSignIn">
@@ -189,8 +182,19 @@
     </div>
   </div>
 
+  <!-- WINDOW 2: My best scores (separate card) -->
+  <div class="card card--me hide" id="scoresCard">
+    <h3 style="margin-top:0">My best scores</h3>
+    <table id="mine">
+      <thead>
+        <tr><th>#</th><th>Puzzle</th><th>Date</th><th>Time</th><th></th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
 <script>
-const APPS = 'https://script.google.com/macros/s/AKfycbwoNN2IwcL-rwRYcwn3vXDyAou6XDxp_fYPFzzAtfhQwmph7LadvLpln_EgPVUK-NHu/exec';
+const APPS = 'https://script.google.com/macros/s/AKfycbxNN6VLQeEkC0oA6AXbx1jO9XWPT-NBv99_UEvzdkGrSAbHwizBm-j7WVhlTWI1w8gy/exec';
 
 let provider = localStorage.getItem('zip_provider') || null;
 let idToken = localStorage.getItem('zip_idtoken') || null;
@@ -219,7 +223,7 @@ function onlyMMSS(t){
   const m = (t||'').match(/\b\d{1,3}:[0-5]\d\b/);
   return m ? m[0] : (t||'');
 }
-function fmtMMSS(sec){             /* from seconds -> m:ss */
+function fmtMMSS(sec){
   if (sec == null || isNaN(sec)) return '';
   const s = Math.round(sec);
   const m = Math.floor(s/60), r = s % 60;
@@ -234,6 +238,9 @@ function showPrivate(on){
   document.getElementById('private').classList.toggle('hide', !on);
   document.getElementById('pleaseSignIn').classList.toggle('hide', on);
   document.getElementById('signOut').classList.toggle('hide', !on);
+  // also toggle the separate scores window
+  const sc = document.getElementById('scoresCard');
+  if (sc) sc.classList.toggle('hide', !on);
 }
 function setSignedInUI(loggedIn){
   document.body.classList.toggle('signedin', loggedIn);
@@ -267,7 +274,6 @@ function renderRows(id, rows){
     tb.appendChild(tr);
   });
 }
-
 function setTodayTitle(_puzzle, label){
   document.getElementById('todayTitle').textContent = label || 'Puzzle #';
 }
@@ -282,7 +288,7 @@ function populatePuzzles(list, latest){
     opt.value = it.puzzle;
     const label = `${it.date} — #${it.puzzle}`;
     opt.textContent = label;
-    PUZZLE_LABELS[String(it.puzzle)] = label;    // map for My best scores
+    PUZZLE_LABELS[String(it.puzzle)] = label;
     if (String(it.puzzle) === String(latest)) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -486,7 +492,6 @@ async function initMe(){
            data-time="${r.time||''}">Delete</button></td>`;
       tb.appendChild(tr);
     });
-    // wire deletes: prefer id -> seconds -> time
     tb.querySelectorAll('.delScore').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         if (!confirm('Delete this score?')) return;
@@ -561,3 +566,4 @@ if (provider) initMe();
 </footer>
 </body>
 </html>
+
