@@ -46,6 +46,16 @@
     .consent{display:flex;align-items:center;gap:10px;margin-right:16px}
     .consent a{text-decoration:underline}
 
+    /* Make # and Time columns 60px in all tables */
+    table { table-layout: fixed; }
+      :is(#today,#avg,#mine) th, :is(#today,#avg,#mine) td {
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+      :is(#today,#avg,#mine) th:nth-child(1),
+      :is(#today,#avg,#mine) td:nth-child(1) { width: 60px; }   /* # */
+      :is(#today,#avg,#mine) th:nth-child(3),
+      :is(#today,#avg,#mine) td:nth-child(3) { width: 60px; }   /* Time / Avg Time */
+
     /* --- NEW: prevent header overflow on mobile --- */
     html, body { overflow-x: hidden; }              /* stop any horizontal scroll */
     header > .row { flex: 1 1 640px; min-width: 0;} /* let the right block shrink instead of pushing */
