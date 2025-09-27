@@ -190,7 +190,7 @@
   </div>
 
 <script>
-const APPS = 'https://script.google.com/macros/s/AKfycbxNN6VLQeEkC0oA6AXbx1jO9XWPT-NBv99_UEvzdkGrSAbHwizBm-j7WVhlTWI1w8gy/exec';
+const APPS = 'https://script.google.com/macros/s/AKfycbwoNN2IwcL-rwRYcwn3vXDyAou6XDxp_fYPFzzAtfhQwmph7LadvLpln_EgPVUK-NHu/exec';
 
 let provider = localStorage.getItem('zip_provider') || null;
 let idToken = localStorage.getItem('zip_idtoken') || null;
@@ -242,7 +242,7 @@ function setSignedInUI(loggedIn){
 }
 function linkHtml(url){ return url ? `<a href="${url}" target="_blank" rel="noopener" title="LinkedIn">↗</a>` : ''; }
 
-/* RENDER: prefer numeric seconds for public boards to avoid 1899/offset issues */
+/* RENDER: prefer numeric seconds for public boards */
 function renderRows(id, rows){
   const tb = document.querySelector('#'+id+' tbody'); tb.innerHTML='';
   rows.forEach((r,i)=>{
@@ -477,17 +477,30 @@ async function initMe(){
       const dateLabel = PUZZLE_LABELS[String(r.puzzle)] || (`#${r.puzzle}`);
       const timeTxt = (typeof r.seconds === 'number') ? fmtMMSS(r.seconds) : onlyMMSS(r.time || '');
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${i+1}</td><td>${r.puzzle}</td><td>${dateLabel}</td><td>${timeTxt}</td><td><button class="btn delScore" data-id="${id||''}" data-puzzle="${r.puzzle}" data-time="${r.time||''}">Delete</button></td>`;
+      tr.innerHTML =
+        `<td>${i+1}</td><td>${r.puzzle}</td><td>${dateLabel}</td><td>${timeTxt}</td>
+         <td><button class="btn delScore"
+           data-id="${id||''}"
+           data-puzzle="${r.puzzle}"
+           data-seconds="${(r.seconds!=null)?r.seconds:''}"
+           data-time="${r.time||''}">Delete</button></td>`;
       tb.appendChild(tr);
     });
+    // wire deletes: prefer id -> seconds -> time
     tb.querySelectorAll('.delScore').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         if (!confirm('Delete this score?')) return;
         const el = e.currentTarget;
         const id = el.getAttribute('data-id');
         const puzzle = +el.getAttribute('data-puzzle');
+        const secondsAttr = el.getAttribute('data-seconds');
         const timeTxt = el.getAttribute('data-time');
-        deleteOneScore(id ? {id} : {puzzle, time: timeTxt});
+        const payload = id
+          ? {id}
+          : (secondsAttr !== null && secondsAttr !== '')
+              ? {puzzle, seconds: Number(secondsAttr)}
+              : {puzzle, time: timeTxt};
+        deleteOneScore(payload);
       });
     });
     return;
@@ -506,7 +519,13 @@ async function initMe(){
       const dateLabel = PUZZLE_LABELS[String(r.puzzle)] || (`#${r.puzzle}`);
       const timeTxt = (typeof r.seconds === 'number') ? fmtMMSS(r.seconds) : onlyMMSS(r.time || '');
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${i+1}</td><td>${r.puzzle}</td><td>${dateLabel}</td><td>${timeTxt}</td><td><button class="btn delScore" data-id="${id||''}" data-puzzle="${r.puzzle}" data-time="${r.time||''}">Delete</button></td>`;
+      tr.innerHTML =
+        `<td>${i+1}</td><td>${r.puzzle}</td><td>${dateLabel}</td><td>${timeTxt}</td>
+         <td><button class="btn delScore"
+           data-id="${id||''}"
+           data-puzzle="${r.puzzle}"
+           data-seconds="${(r.seconds!=null)?r.seconds:''}"
+           data-time="${r.time||''}">Delete</button></td>`;
       tb.appendChild(tr);
     });
     tb.querySelectorAll('.delScore').forEach(btn=>{
@@ -515,8 +534,14 @@ async function initMe(){
         const el = e.currentTarget;
         const id = el.getAttribute('data-id');
         const puzzle = +el.getAttribute('data-puzzle');
+        const secondsAttr = el.getAttribute('data-seconds');
         const timeTxt = el.getAttribute('data-time');
-        deleteOneScore(id ? {id} : {puzzle, time: timeTxt});
+        const payload = id
+          ? {id}
+          : (secondsAttr !== null && secondsAttr !== '')
+              ? {puzzle, seconds: Number(secondsAttr)}
+              : {puzzle, time: timeTxt};
+        deleteOneScore(payload);
       });
     });
     return;
