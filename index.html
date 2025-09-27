@@ -53,6 +53,10 @@
     /* override for My best scores: make 3rd column 150px */
     #mine th:nth-child(3), #mine td:nth-child(3){width:150px}
 
+    /* My best scores: horizontal scroll on narrow screens */
+    .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; width:100%}
+    #mine{min-width:600px}
+
     .namecell{display:flex;align-items:center;gap:6px;min-width:0}
     .namecell .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .namecell a{flex:0 0 auto}
@@ -188,12 +192,14 @@
   <!-- WINDOW 2: My best scores (separate card) -->
   <div class="card card--me hide" id="scoresCard">
     <h3 style="margin-top:0">My best scores</h3>
-    <table id="mine">
-      <thead>
-        <tr><th>#</th><th>Puzzle</th><th>Date</th><th>Time</th><th></th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-scroll">
+      <table id="mine">
+        <thead>
+          <tr><th>#</th><th>Puzzle</th><th>Date</th><th>Time</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
 <script>
