@@ -38,29 +38,40 @@
     .right{margin-left:auto}
     .toast{font-size:14px}
     .namecell a{font-size:12px;margin-left:6px;text-decoration:none}
-    /* (1) Footer + (3) muted helper */
+    /* (1) Footer + helpers */
     .footer{margin-top:28px;color:var(--muted)}
     .footer small{font-size:13px}
     .footer a{color:inherit;text-decoration:underline}
     .muted{color:var(--muted)}
+    .consent{display:flex;align-items:center;gap:10px;margin-right:16px}
+    .consent a{text-decoration:underline}
   </style>
 </head>
 <body>
   <header>
     <div class="brand">Zip Community Leaderboard</div>
 
-    <div id="authRow" class="row">
-      <!-- Google One Tap -->
-      <div id="g_id_onload"
-        data-client_id="368132008439-lskm63n5dmsv9r43cchmrjpdmhfqaa1p.apps.googleusercontent.com"
-        data-callback="onGoogle"
-        data-auto_select="true"
-        data-itp_support="true"></div>
-      <div class="g_id_signin" data-type="standard" data-size="medium"></div>
+    <div class="row">
+      <!-- consent gate -->
+      <label class="consent" title="Required to use the service">
+        <input type="checkbox" id="accept">
+        <span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></span>
+      </label>
 
-      <!-- Email fallback -->
-      <span class="btn" id="useEmail">Use email instead</span>
-      <button class="btn hide" id="signOut">Sign out</button>
+      <!-- Auth (hidden until acceptance) -->
+      <div id="authRow" class="row hide">
+        <!-- Google One Tap -->
+        <div id="g_id_onload"
+          data-client_id="368132008439-lskm63n5dmsv9r43cchmrjpdmhfqaa1p.apps.googleusercontent.com"
+          data-callback="onGoogle"
+          data-auto_select="false"   <!-- important: no auto-signin before consent -->
+          data-itp_support="true"></div>
+        <div class="g_id_signin" data-type="standard" data-size="medium"></div>
+
+        <!-- Email fallback -->
+        <span class="btn" id="useEmail">Use email instead</span>
+        <button class="btn hide" id="signOut">Sign out</button>
+      </div>
     </div>
   </header>
 
@@ -139,6 +150,23 @@ let provider = localStorage.getItem('zip_provider') || null; // "google" | "emai
 let idToken = localStorage.getItem('zip_idtoken') || null;   // Google ID token
 let sessionToken = localStorage.getItem('zip_session') || null; // Email session token
 
+/* ---------- consent gate ---------- */
+function isAccepted(){ return localStorage.getItem('zip_accept') === '1'; }
+function setGate(on){
+  document.getElementById('authRow').classList.toggle('hide', !on);
+}
+(function initConsent(){
+  const box = document.getElementById('accept');
+  const accepted = isAccepted();
+  box.checked = accepted;
+  setGate(accepted);
+  box.addEventListener('change', (e)=>{
+    const ok = !!e.target.checked;
+    localStorage.setItem('zip_accept', ok ? '1' : '0');
+    setGate(ok);
+  });
+})();
+
 /* ---------- UI helpers ---------- */
 function showPrivate(on){
   document.getElementById('private').classList.toggle('hide', !on);
@@ -205,7 +233,10 @@ document.getElementById('refresh').onclick = ()=> {
 };
 
 /* ---------- Auth ---------- */
-document.getElementById('useEmail').onclick = ()=> document.getElementById('emailBox').classList.remove('hide');
+document.getElementById('useEmail').onclick = ()=> {
+  if (!isAccepted()){ alert('Please accept the Terms and Privacy Policy first.'); return; }
+  document.getElementById('emailBox').classList.remove('hide');
+};
 
 document.getElementById('signOut').onclick = async ()=>{
   try{
@@ -223,6 +254,7 @@ document.getElementById('signOut').onclick = async ()=>{
 
 /* Google One Tap callback */
 window.onGoogle = (resp) => {
+  if (!isAccepted()){ alert('Please accept the Terms and Privacy Policy first.'); return; }
   idToken = resp.credential;
   provider = 'google';
   localStorage.setItem('zip_idtoken', idToken);
@@ -232,6 +264,7 @@ window.onGoogle = (resp) => {
 
 /* Email OTP */
 document.getElementById('sendCode').onclick = async ()=>{
+  if (!isAccepted()){ alert('Please accept the Terms and Privacy Policy first.'); return; }
   const email = document.getElementById('eml').value.trim();
   const msg = document.getElementById('otpMsg'); msg.textContent = 'Sending...';
   try{
@@ -246,6 +279,7 @@ document.getElementById('sendCode').onclick = async ()=>{
 };
 
 document.getElementById('verifyCode').onclick = async ()=>{
+  if (!isAccepted()){ alert('Please accept the Terms and Privacy Policy first.'); return; }
   const email = document.getElementById('eml').value.trim();
   const code = document.getElementById('otp').value.trim();
   const msg = document.getElementById('otpMsg'); msg.textContent = 'Verifying...';
@@ -374,6 +408,10 @@ if (provider) initMe();
     <a href="terms.html" target="_blank" rel="noopener">Terms</a> and
     <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
   </small>
+  <p class="muted" style="margin-top:8px">
+    “LinkedIn” is a trademark of LinkedIn Corporation. This is an independent community project and is not affiliated with, endorsed by, or sponsored by LinkedIn.
+  </p>
 </footer>
 </body>
 </html>
+
